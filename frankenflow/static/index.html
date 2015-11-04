@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html class="full" lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Frankenflow</title>
+
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/custom.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<!--Potential error messages will go here!-->
+<div id="error_message">
+</div>
+
+<!--Navigation bar-->
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="#">Frankenflow</a>
+        </div>
+        <div class="pull-right">
+            <p class="navbar-text">Last contact to server: <span
+                    id="last_contact_time">??</span></p>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <button type="button" id="iterate_button"
+                    class="btn btn-sm btn-default">
+                Iterate
+            </button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            Status: <pre id="status_status"></pre>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            Message: <pre id="status_message"></pre>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            Graph: <pre id="graph"></pre>
+        </div>
+    </div>
+</div>
+
+<!-- Put your page content here! -->
+
+<script src="/static/js/jquery.js"></script>
+<script src="/static/js/moment.min.js"></script>
+<script src="/static/js/bootstrap.min.js"></script>
+<script src="/static/js/custom.js"></script>
+
+</body>
+
+</html>

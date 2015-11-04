@@ -1,0 +1,38 @@
+/*!
+ * Start Bootstrap - Full HTML Template (http://startbootstrap.com)
+ * Code licensed under the Apache License v2.0.
+ * For details, see http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+/* Header Image Background - Change the URL below to your image path (example: ../images/background.jpg) */
+
+body {
+    margin-top: 50px; /* Required margin for .navbar-fixed-top. Remove if using .navbar-static-top. Change if height of navigation changes. */
+    background: url(../images/background.jpg) no-repeat center center fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    background-size: cover;
+    -o-background-size: cover;
+    color: rgb(200, 200, 200);
+}
+
+.navbar {
+    background-color: rgba(0, 0, 0, 0.5);
+    border-width: 0px;
+}
+
+/*The error message bar that is shown if something goes wrong!*/
+#error_message {
+    position: absolute;
+    z-index: 9999999;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #FF5E38;
+    text-align: center;
+    line-height: 2.5;
+    overflow: hidden;
+    -webkit-box-shadow: 0 0 5px black;
+    -moz-box-shadow: 0 0 5px black;
+    box-shadow: 0 0 5px black;
+}
