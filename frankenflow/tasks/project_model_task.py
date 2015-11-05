@@ -5,7 +5,7 @@ from . import task
 from .. import utils
 
 
-class ProjectModelTask(task.Task):
+class ProjectModel(task.Task):
     """
     Task projecting a model.
     """
@@ -63,4 +63,12 @@ class ProjectModelTask(task.Task):
                                      "rhoinv0", "mu0"])
 
     def generate_next_steps(self):
-        pass
+        next_steps = [
+            {"task_type": "PlotSpectralElementGridModel",
+             "inputs": {
+                 "model_name": os.path.basename(self._output_directory)
+             },
+             "priority": 1
+            }
+        ]
+        return next_steps

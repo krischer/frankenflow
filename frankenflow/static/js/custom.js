@@ -54,6 +54,24 @@ $(function() {
         setTimeout(update_info_last_accessed, 500);
     })();
 
+    $.ajax({
+        url: '/graph',
+        success: function(data) {
+            console.log(data);
+            container = $("#graph_plot")[0];
+
+            var network = new vis.Network(container, data, {});
+
+            network.on("click", function (params) {
+                var node = network.findNode(params.nodes[0])[0];
+                var info = node.options._meta;
+                $("#node_detail").text(JSON.stringify(info, null, 2));
+            });
+
+        }
+    });
+
+
 });
 
 

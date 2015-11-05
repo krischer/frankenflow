@@ -31,6 +31,7 @@ class Config():
 
     def assert_config(self):
         self._assert_config_file_exists("agere_cmd")
+        self._assert_config_file_exists("lasif_cmd")
         self._assert_config_folder_exists("lasif_project")
 
     def _assert_config_file_exists(self, key):
@@ -67,7 +68,7 @@ class FlowGraph():
         self.filename = filename
         self.graph = nx.DiGraph()
 
-    def add_job(self, task_type, inputs, priority=0):
+    def add_job(self, task_type, inputs, priority=0, from_node=None):
         now = datetime.datetime.now()
         graph_id = now.strftime("%y%m%dT%H%M%S_") + task_type + "_" + str(
             uuid.uuid4())
@@ -77,6 +78,10 @@ class FlowGraph():
             "priority": priority,
             "job_status": "not started"
         })
+
+        if from_node:
+            print("Adding edge from", from_node, "to", graph_id)
+            self.graph.add_edge(from_node, graph_id)
 
     def get_current_or_next_job(self):
         """
@@ -218,6 +223,17 @@ class FlowManager():
                     self._current_message = (
                         "Successfully completed job '%s'." % (job_id))
                     self._current_status = "SUCCESS"
+
+                    if return_value["next_steps"]:
+                        for step in return_value["next_steps"]:
+                            prio = step["priority"] \
+                                if "priority" in step else 0
+                            self.graph.add_job(
+                                task_type=step["task_type"],
+                                inputs=step["inputs"],
+                                priority=prio,
+                                from_node=job_id)
+
                 elif return_value["status"] == "failed":
                     job["job_status"] = "failed"
                     self._current_status = "Failure"
@@ -282,7 +298,7 @@ class FlowManager():
 
         # Add a project model task at the default priority.
         self.graph.add_job(
-            task_type="ProjectModelTask",
+            task_type="ProjectModel",
             inputs={"model_folder": folder}
         )
 

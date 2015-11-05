@@ -44,7 +44,9 @@ def _launch_job_and_report(job):
         info["start_time_stage"] = str(datetime.datetime.now())
 
         try:
-            getattr(job, method_name)()
+            ret_val = getattr(job, method_name)()
+            if current_stage == "006_generate_next_steps":
+                report["next_steps"] = ret_val
             _end = time.time()
         except Exception as e:
             _end = time.time()
@@ -60,6 +62,7 @@ def _launch_job_and_report(job):
 
         info["end_time_stage"] = str(datetime.datetime.now())
         info["runtime_stage"] = _end - _start
+
 
     report["status"] = "success"
 
