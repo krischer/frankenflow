@@ -66,7 +66,22 @@ class Config():
 class FlowGraph():
     def __init__(self, filename):
         self.filename = filename
-        self.graph = nx.DiGraph()
+        if os.path.exists(self.filename):
+            self.deserialize()
+        else:
+            self.graph = nx.DiGraph()
+
+    def serialize(self):
+        with open(self.filename, "wt") as fh:
+            json.dump(self.get_json(), fh)
+
+    def deserialize(self):
+        with open(self.filename, "rt") as fh:
+            self.graph = networkx.readwrite.json_graph.node_link_graph(
+                json.load(fh))
+
+    def get_json(self):
+        return networkx.readwrite.json_graph.node_link_data(self.graph)
 
     def add_job(self, task_type, inputs, priority=0, from_node=None):
         now = datetime.datetime.now()
@@ -82,6 +97,8 @@ class FlowGraph():
         if from_node:
             print("Adding edge from", from_node, "to", graph_id)
             self.graph.add_edge(from_node, graph_id)
+
+        return graph_id, self[graph_id]
 
     def get_current_or_next_job(self):
         """
@@ -118,9 +135,6 @@ class FlowGraph():
 
     def __getitem__(self, item):
         return self.graph.node[item]
-
-    def get_json(self):
-        return networkx.readwrite.json_graph.node_link_data(self.graph)
 
     def __len__(self):
         return len(self.graph)
@@ -219,7 +233,6 @@ class FlowManager():
                 job["run_information"] = return_value
                 if return_value["status"] == "success":
                     job["job_status"] = "success"
-                    self.create_next_job(job_id)
                     self._current_message = (
                         "Successfully completed job '%s'." % (job_id))
                     self._current_status = "SUCCESS"
@@ -247,6 +260,9 @@ class FlowManager():
                     self._current_message = \
                         "Current status is not clear. Celery job returned " \
                         "with status '%s'." % return_value["status"]
+
+                # No matter the outcome. Always save the graph.
+                self.graph.serialize()
             else:
                 job["job_status"] = result.state
                 self._current_status = "????"
@@ -261,9 +277,6 @@ class FlowManager():
         else:
             raise NotImplementedError("'job_status' = '%s'" %
                                       job["job_status"])
-
-    def create_next_job(self, job_id):
-        print("Creating next job!!!!")
 
     def start_job(self, job_id):
         job_information = copy.deepcopy(self.graph[job_id])
@@ -285,6 +298,8 @@ class FlowManager():
         for key in keys:
             self.graph[job_id][key] = job_information[key]
 
+        self.graph.serialize()
+
     def create_initial_job(self):
         """
         Create the first job which is then used to trigger the rest of the
@@ -296,18 +311,26 @@ class FlowManager():
             "Could not create the initial jobs. No folder '%s' found." %
             folder)
 
+        # Add a start node that does not do anything.
+        job_id, start = self.graph.add_job(task_type="Start", inputs={})
+        start["job_status"] = "success"
+
         # Add a project model task at the default priority.
         self.graph.add_job(
             task_type="ProjectModel",
-            inputs={"model_folder": folder}
+            inputs={"model_folder": folder},
+            from_node=job_id
         )
 
         # Add a job to plot the starting model at a higher priority.
         self.graph.add_job(
             task_type="PlotRegularGridModel",
             inputs={"model_folder": folder},
-            priority=1
+            priority=1,
+            from_node=job_id
         )
+
+        self.graph.serialize()
 
     def __check_data_files(self):
         # A couple of files are needed.

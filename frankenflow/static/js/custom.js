@@ -1,10 +1,33 @@
 var info;
 var info_last_accessed;
 
+
 function update_status_on_page(data) {
     $("#status_status").text(data["status"]);
     $("#status_message").text(data["message"]);
 };
+
+
+function update_graph() {
+    $.ajax({
+        url: '/graph',
+        success: function(data) {
+            console.log(data);
+            container = $("#graph_plot")[0];
+
+            var network = new vis.Network(container, data, {});
+
+            network.on("click", function (params) {
+                var node = network.findNode(params.nodes[0])[0];
+                var info = node.options._meta;
+                $("#node_detail").text(JSON.stringify(info, null, 2));
+            });
+
+        }
+    });
+}
+
+
 
 $(function() {
 
@@ -28,21 +51,6 @@ $(function() {
         });
     })();
 
-    (function update_graph() {
-        $.ajax({
-            url: '/graph',
-            success: function(data) {
-                $("#graph").text(JSON.stringify(data, null, 2));
-            },
-            error: function(error_object) {
-            },
-            complete: function() {
-                // Poll every second.
-                setTimeout(update_graph, 1000);
-            }
-        });
-    })();
-
     // Keep updating the last server contact time on the page.
     (function update_info_last_accessed() {
         if (info_last_accessed) {
@@ -53,25 +61,11 @@ $(function() {
         }
         setTimeout(update_info_last_accessed, 500);
     })();
-
-    $.ajax({
-        url: '/graph',
-        success: function(data) {
-            console.log(data);
-            container = $("#graph_plot")[0];
-
-            var network = new vis.Network(container, data, {});
-
-            network.on("click", function (params) {
-                var node = network.findNode(params.nodes[0])[0];
-                var info = node.options._meta;
-                $("#node_detail").text(JSON.stringify(info, null, 2));
-            });
-
-        }
-    });
+});
 
 
+$('#update_graph_button').on('click', function () {
+    update_graph();
 });
 
 
