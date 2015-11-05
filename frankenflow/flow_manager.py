@@ -31,6 +31,7 @@ class Config():
 
     def assert_config(self):
         self._assert_config_file_exists("agere_cmd")
+        self._assert_config_folder_exists("lasif_project")
 
     def _assert_config_file_exists(self, key):
         assert key in self.config, \
@@ -39,6 +40,14 @@ class Config():
         filename = self.config[key]
         assert os.path.isfile(filename), \
             "File '%s' for config value '%s' must exist." % (filename, key)
+
+    def _assert_config_folder_exists(self, key):
+        assert key in self.config, \
+            "'%s' must be given in the config file." % key
+
+        filename = self.config[key]
+        assert os.path.isdir(filename), \
+            "Folder '%s' for config value '%s' must exist." % (filename, key)
 
     def serialize(self):
         with open(self.__filename, "wt") as fh:
@@ -58,13 +67,14 @@ class FlowGraph():
         self.filename = filename
         self.graph = nx.DiGraph()
 
-    def add_job(self, task_type, inputs):
+    def add_job(self, task_type, inputs, priority=0):
         now = datetime.datetime.now()
-        graph_id = now.strftime("%y%m%dT%H%M%S_") + str(uuid.uuid4())
+        graph_id = now.strftime("%y%m%dT%H%M%S_") + task_type + "_" + str(
+            uuid.uuid4())
         self.graph.add_node(n=graph_id, attr_dict={
             "task_type": task_type,
             "inputs": inputs,
-            "priority": 0,
+            "priority": priority,
             "job_status": "not started"
         })
 
@@ -93,7 +103,8 @@ class FlowGraph():
 
         # Now pick the job with the highest priority
         out_nodes = sorted(out_nodes,
-                           key=lambda x: self.graph.node[x]["priority"])
+                           key=lambda x: self.graph.node[x]["priority"],
+                           reverse=True)
 
         if not out_nodes:
             raise NoJobsLeft
@@ -118,8 +129,29 @@ class FlowManager():
         self.config = Config(os.path.join(self.base_folder,
                                                "config.json"))
 
+        # Working directory for all the jobs.
         self.working_dir = os.path.join(self.base_folder, "__JOBS")
         os.makedirs(self.working_dir, exist_ok=True)
+
+        # Directory where the optimization takes place.
+        self.optimization_dir = os.path.join(self.base_folder,
+                                             "__OPTIMIZATION")
+        os.makedirs(self.optimization_dir, exist_ok=True)
+
+        # Folders to collect the output.
+        output_folder = os.path.join(self.base_folder, "__OUTPUT")
+
+        self.output_folders = {
+            "regular_grid_models": os.path.join(output_folder,
+                                                "regular_grid_models"),
+            "spec_elem_grid_models": os.path.join(output_folder,
+                                                  "spec_elem_grid_models"),
+            "regular_grid_kernels": os.path.join(output_folder,
+                                                 "regular_grid_kernels")
+        }
+
+        for folder in self.output_folders.values():
+            os.makedirs(folder, exist_ok=True)
 
         self.__check_data_files()
 
@@ -245,19 +277,23 @@ class FlowManager():
         Create the first job which is then used to trigger the rest of the
         workflow. Each step will always triggers its next step.
         """
-        # Find all folders in the base_directory with 'XXX_1_Model'. This is
-        # where everything starts.
-        folders = glob.glob(os.path.join(self.base_folder, "???_1_Model"))
-        folders = [_i for _i in folders if os.path.isdir(_i)]
-        if not folders:
-            raise ValueError("Could not create initial job. No folder with "
-                             "pattern `???_1_Model` found.")
-        # Now the folder is found.
-        folder = sorted(folders)[0]
+        # Must have an initial model. The rest will be derived.
+        folder = os.path.join(self.optimization_dir, "000_1_Model")
+        assert os.path.exists(folder) and os.path.isdir(folder), (
+            "Could not create the initial jobs. No folder '%s' found." %
+            folder)
 
+        # Add a project model task at the default priority.
         self.graph.add_job(
             task_type="ProjectModelTask",
             inputs={"model_folder": folder}
+        )
+
+        # Add a job to plot the starting model at a higher priority.
+        self.graph.add_job(
+            task_type="PlotRegularGridModel",
+            inputs={"model_folder": folder},
+            priority=1
         )
 
     def __check_data_files(self):
@@ -290,7 +326,9 @@ class FlowManager():
     def info(self):
         return {
             "base_folder": self.base_folder,
+            "data_folder": self.data_folder,
             "working_dir": self.working_dir,
             "data": self.data,
-            "config": self.config.config
+            "config": self.config.config,
+            "output_folders": self.output_folders
         }

@@ -46,12 +46,14 @@ class Task(metaclass=abc.ABCMeta):
         _start = time.time()
 
         # start the daemon main loop
-        with open(self.stdout, "wb") as stdout:
+        with open(self.stdout, "ab") as stdout:
+            stdout.write(b"\n\n\n\n\n================================\n")
+            stdout.write(b"\n================================\n")
             stdout.write(b"STARTTIME: %b\n" % str(starttime).encode())
             stdout.write(b"---------------------\n")
             stdout.write(b"STDOUT START\n")
             stdout.write(b"---------------------\n")
-            with open(self.stderr, "wb") as stderr:
+            with open(self.stderr, "ab") as stderr:
                 p = subprocess.Popen(cmd, cwd=cwd,
                                      stdout=stdout,
                                      stderr=stderr)

@@ -6,7 +6,6 @@ from frankenflow.flow_manager import FlowManager
 
 STATIC_DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                 "static"))
-print(STATIC_DIRECTORY)
 
 app = flask.Flask(__name__, static_folder=STATIC_DIRECTORY)
 
@@ -63,7 +62,7 @@ def serve(flow_manager, port=12111, debug=False, open_to_outside=False):
 
 
 def __main__():
-    fm = FlowManager("/Users/lion/temp/flow")
+    fm = FlowManager("/Users/lion/temp/flow_small/flow")
     serve(flow_manager=fm, port=12111, debug=True,
           open_to_outside=False)
 

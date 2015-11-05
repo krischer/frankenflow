@@ -54,6 +54,9 @@ def _launch_job_and_report(job):
             return report
 
         info["end_time_stage"] = str(datetime.datetime.now())
+        print(datetime.datetime.now())
+        print(info["start_time_stage"])
+        print(info["start_time_stage"])
 
     report["status"] = "success"
 
