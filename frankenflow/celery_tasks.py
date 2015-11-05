@@ -1,5 +1,6 @@
 import datetime
 import os
+import time
 
 from . import celery
 from .tasks import task_map
@@ -34,19 +35,23 @@ def _launch_job_and_report(job):
         ("006_generate_next_steps", "generate_next_steps")
     ]
 
-    info = {}
 
     for current_stage, method_name in stages:
+        info = {}
         report[current_stage]  = info
 
+        _start = time.time()
         info["start_time_stage"] = str(datetime.datetime.now())
 
         try:
             getattr(job, method_name)()
+            _end = time.time()
         except Exception as e:
+            _end = time.time()
             info["status"] = "failed"
             info["fail_reason"] = "%s: %s" % (e.__class__.__name__, str(e))
             info["end_time_stage"] = str(datetime.datetime.now())
+            info["runtime_stage"] = _end - _start
 
             report["status"] = "failed"
             report["fail_stage"] = current_stage
@@ -54,9 +59,7 @@ def _launch_job_and_report(job):
             return report
 
         info["end_time_stage"] = str(datetime.datetime.now())
-        print(datetime.datetime.now())
-        print(info["start_time_stage"])
-        print(info["start_time_stage"])
+        info["runtime_stage"] = _end - _start
 
     report["status"] = "success"
 

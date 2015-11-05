@@ -19,8 +19,11 @@ class ProjectModelTask(task.Task):
         utils.assert_files_dont_exist(self.working_dir, [
            "drho", "dvp", "dvsh", "dvsv", "block_x", "block_y", "block_z"])
 
-        self._output_directory = os.path.join(self.working_dir,
-                                              "projected_model")
+        # Copy directly to LASIF directory.
+        self._output_directory = os.path.join(
+            self.context["config"]["lasif_project"], "MODELS",
+            os.path.basename(self.inputs["model_folder"]))
+
         assert not os.path.exists(self._output_directory), \
             "Folder '%s' already exists." % self._output_directory
 
@@ -53,7 +56,11 @@ class ProjectModelTask(task.Task):
         self._run_external_script(cwd=".", cmd=cmd)
 
     def check_post_run(self):
-        pass
+        # The output directory must have a couple of files now. This gives a
+        # certain confidence that the operation succeeded
+        utils.assert_files_exist(
+            self._output_directory, ["A0", "B0", "C0", "boxfile", "lambda0",
+                                     "rhoinv0", "mu0"])
 
     def generate_next_steps(self):
         pass

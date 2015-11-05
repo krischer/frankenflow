@@ -174,9 +174,6 @@ class FlowManager():
 
         Should be periodically called by something.
         """
-        self._current_status = None
-        self._current_message = None
-
         try:
             self._iterate()
         except Exception:
