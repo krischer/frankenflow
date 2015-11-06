@@ -14,6 +14,8 @@ class CopyModelToHPC(task.Task):
         assert "model_name" in self.inputs, "'model_name' must be part of " \
                                             "the inputs"
 
+        self.inputs["model_name"] = self.inputs["model_name"].lower()
+
         # Make sure the folder does exist.
         self.model_folder = os.path.join(
             self.context["config"]["lasif_project"], "MODELS",
@@ -78,13 +80,13 @@ class CopyModelToHPC(task.Task):
                 ", ".join(missing_files))
 
     def generate_next_steps(self):
-        pass
-        # next_steps = [
-        #     # Run the forward adjoint.
-        #     {"task_type": "ForwardSimulation",
-        #      "inputs": {
-        #          "model_name": os.path.basename(self._output_directory)
-        #      },
-        #      "priority": 0
-        #      }
-        # ]
+        next_steps = [
+            # Run the forward adjoint.
+            {"task_type": "ForwardSimulation",
+             "inputs": {
+                 "model_name": os.path.basename(self.inputs["model_name"])
+             },
+             "priority": 0
+             }
+        ]
+        return next_steps

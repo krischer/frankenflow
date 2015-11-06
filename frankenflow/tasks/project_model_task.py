@@ -53,7 +53,9 @@ class ProjectModel(task.Task):
                "--output-folder=%s" % self._output_directory,
                "--input-files=%s" % self.context["data"]["input_folder"],
                self.working_dir]
-        self._run_external_script(cwd=".", cmd=cmd)
+        returncode = self._run_external_script(cwd=".", cmd=cmd)
+        assert returncode == 0, \
+            "Model projection exited with return code %i." % returncode
 
     def check_post_run(self):
         # The output directory must have a couple of files now. This gives a

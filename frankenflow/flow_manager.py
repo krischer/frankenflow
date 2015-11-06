@@ -40,9 +40,22 @@ class Config():
         self._assert_var_exists("hpc_agere_project")
         self._assert_var_exists("hpc_remote_input_files_directory")
 
-    def _assert_var_exists(self, key):
+        self._assert_var_exists("number_of_events", var_type=int)
+        self._assert_var_exists("forward_wavefield_storage_degree",
+                                var_type=int)
+        self._assert_var_exists("parallel_events", var_type=int)
+        self._assert_var_exists("pml_count", var_type=int)
+        self._assert_var_exists("walltime_per_event_forward", var_type=float)
+        self._assert_var_exists("walltime_per_event_adjoint", var_type=float)
+
+
+    def _assert_var_exists(self, key, var_type=None):
         assert key in self.config, \
             "'%s' must be given in the config file." % key
+        if var_type is not None:
+            assert isinstance(self.config[key], var_type), \
+                "Config variable '%s' not of type '%s'." % (key,
+                                                            var_type.__name__)
 
     def _assert_config_file_exists(self, key):
         self._assert_var_exists(key)
@@ -296,13 +309,15 @@ class FlowManager():
             job_information["working_dir"], "stdout")
         job_information["stderr"] = os.path.join(
             job_information["working_dir"], "stderr")
+        job_information["logfile"] = os.path.join(
+            job_information["working_dir"], "logfile.txt")
 
         result = celery_tasks.launch_job.delay(job_information,
                                                context=self.info)
         self.graph[job_id]["job_status"] = "running"
         self.graph[job_id]["celery_task_id"] = result.task_id
 
-        keys = ["working_dir", "stdout", "stderr"]
+        keys = ["working_dir", "stdout", "stderr", "logfile"]
         for key in keys:
             self.graph[job_id][key] = job_information[key]
 

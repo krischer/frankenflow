@@ -16,7 +16,8 @@ def launch_job(job_info, context):
                     inputs=job_info["inputs"],
                     working_dir=job_info["working_dir"],
                     stdout=job_info["stdout"],
-                    stderr=job_info["stderr"])
+                    stderr=job_info["stderr"],
+                    logfile=job_info["logfile"])
 
     report = _launch_job_and_report(job=job)
 
@@ -62,6 +63,8 @@ def _launch_job_and_report(job):
 
         info["end_time_stage"] = str(datetime.datetime.now())
         info["runtime_stage"] = _end - _start
+
+        job.add_log_entry("Finished stage %s." % current_stage)
 
 
     report["status"] = "success"

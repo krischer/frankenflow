@@ -36,12 +36,17 @@ class Task(metaclass=abc.ABCMeta):
 
     The checking stages have to return True, otherwise it will abort!
     """
-    def __init__(self, context, inputs, working_dir, stdout, stderr):
+    def __init__(self, context, inputs, working_dir, stdout, stderr, logfile):
         self.context = context
         self.inputs = inputs
         self.working_dir = working_dir
         self.stdout = stdout
         self.stderr = stderr
+        self.logfile = logfile
+
+    def add_log_entry(self, msg):
+        with open(self.logfile, "at") as fh:
+            fh.write("[%s] %s\n" % (str(datetime.datetime.now()), msg))
 
     def _init_ssh_and_stfp_clients(self):
         # Load the config.
@@ -61,9 +66,13 @@ class Task(metaclass=abc.ABCMeta):
         # Should be safe enough in our controlled environment.
         self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.ssh_client.load_system_host_keys()
-        self.ssh_client.connect(**info, )
+        self.ssh_client.connect(**info)
 
         self.sftp_client = self.ssh_client.open_sftp()
+
+        self.add_log_entry(
+            "Successfully initialized SSH and SFTP connection to %s@%s" % (
+                info["username"], info["hostname"]))
 
     def __del__(self):
         # Close ssh and sftp clients in the destructor.
@@ -71,9 +80,20 @@ class Task(metaclass=abc.ABCMeta):
             self.ssh_client.close()
             self.sftp_client.close()
 
+    def _run_ssh_command(self, cmd):
+        self.add_log_entry("Executing command over SSH: '%s'" % cmd)
+        _, stdout, stderr = self.ssh_client.exec_command(cmd)
+        # Force synchronous execution.
+        stdout = stdout.readlines()
+        stderr = stderr.readlines()
+        return stdout, stderr
+
     def _run_external_script(self, cwd, cmd):
         starttime = datetime.datetime.now()
         _start = time.time()
+
+        self.add_log_entry("Locally executing cmd '%s' in folder '%s' ..." % (
+            cmd, cwd))
 
         # start the daemon main loop
         with open(self.stdout, "ab") as stdout:
@@ -103,6 +123,8 @@ class Task(metaclass=abc.ABCMeta):
             fh.write("CMD: %s\n" % (str(cmd)))
             fh.write("RUNTIME: %.3f seconds\n" % (_end - _start))
             fh.write("ENDTIME: %s\n" % endtime)
+
+        return p.returncode
 
     def copy_blockfiles(self, target_dir):
         """
