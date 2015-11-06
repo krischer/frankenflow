@@ -46,7 +46,12 @@ def _launch_job_and_report(job):
 
         try:
             ret_val = getattr(job, method_name)()
-            if current_stage == "006_generate_next_steps":
+            # The fifth stage can be used to set new goals.
+            if current_stage == "005_check_post_run":
+                if isinstance(ret_val, dict) and "new_goal" in ret_val:
+                    report["new_goal"] = ret_val["new_goal"]
+            # The last stage returns information about the next runs.
+            elif current_stage == "006_generate_next_steps":
                 report["next_steps"] = ret_val
             _end = time.time()
         except Exception as e:

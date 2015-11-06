@@ -161,13 +161,48 @@ class FlowGraph():
         return len(self.graph)
 
 
+class FlowStatus(object):
+    """
+    Simple persistent status.
+
+    Like a dictionary just always stored on disc.
+    """
+    def __init__(self, filename):
+        self._filename = filename
+        self._deserialize()
+
+    def __getitem__(self, item):
+        if item not in self.__status:
+            return None
+        self._deserialize()
+        return self.__status[item]
+
+    def __setitem__(self, key, value):
+        self.__status[key] = value
+        self._serialize()
+
+    def _deserialize(self):
+        if not os.path.exists(self._filename):
+            self.__status = {}
+        else:
+            with open(self._filename, "rt") as fh:
+                self.__status = json.load(fh)
+        return self.__status
+
+    def _serialize(self):
+        with open(self._filename, "wt") as fh:
+            json.dump(self.__status, fh)
+
+
 class FlowManager():
     def __init__(self, base_folder):
         os.makedirs(base_folder, exist_ok=True)
         self.base_folder = base_folder
 
+        # Init status and config.
+        self.status = FlowStatus(os.path.join(self.base_folder, "status.json"))
         self.config = Config(os.path.join(self.base_folder,
-                                               "config.json"))
+                                          "config.json"))
 
         # Working directory for all the jobs.
         self.working_dir = os.path.join(self.base_folder, "__JOBS")
@@ -198,14 +233,12 @@ class FlowManager():
         self.graph = FlowGraph(
             filename=os.path.join(self.base_folder, "graph.json"))
 
-        self._current_status = None
-        self._current_message = None
-
     @property
     def current_status(self):
         return {
-            "status": self._current_status,
-            "message": self._current_message
+            "status": self.status["current_status"],
+            "message": self.status["current_message"],
+            "goal": self.status["current_goal"]
         }
 
     def iterate(self):
@@ -218,13 +251,17 @@ class FlowManager():
             self._iterate()
         except Exception:
             tb = utils.collect_traceback(3)
-            self._current_message = tb
-            self._current_status = "ERROR"
+            self.status["current_message"] = tb
+            self.status["current_status"] = "ERROR"
 
     def _iterate(self):
         # If there is no job, create one!
         if len(self.graph) == 0:
             self.create_initial_job()
+
+
+        assert self.status["current_goal"] is not None, \
+            "Cannot advance the flow without a goal!"
 
         assert len(self.graph) != 0, "The graph has an id thus it must not " \
                                      "be empty!"
@@ -232,8 +269,8 @@ class FlowManager():
         try:
             job_id = self.graph.get_current_or_next_job()
         except NoJobsLeft:
-            self._current_status = "DONE"
-            self._current_message = "No jobs left"
+            self.status["current_status"] = "DONE"
+            self.status["current_message"] = "No jobs left"
             return
         self.advance_job(job_id)
 
@@ -246,17 +283,18 @@ class FlowManager():
             print("STATE:", result.state)
             # Still running. Nothing to be done.
             if result.state == "SENT":
-                self._current_status = "OK"
-                self._current_message = "Job '%s' currently running." % job_id
+                self.status["current_status"] = "OK"
+                self.status["current_message"] = \
+                    "Job '%s' currently running." % job_id
             # Run finished. A run should not really fail.
             elif result.state == "SUCCESS":
                 return_value = result.wait()
                 job["run_information"] = return_value
                 if return_value["status"] == "success":
                     job["job_status"] = "success"
-                    self._current_message = (
-                        "Successfully completed job '%s'." % (job_id))
-                    self._current_status = "SUCCESS"
+                    self.status["current_message"] = \
+                        "Successfully completed job '%s'." % (job_id)
+                    self.status["current_status"] = "SUCCESS"
 
                     if return_value["next_steps"]:
                         for step in return_value["next_steps"]:
@@ -270,15 +308,15 @@ class FlowManager():
 
                 elif return_value["status"] == "failed":
                     job["job_status"] = "failed"
-                    self._current_status = "Failure"
+                    self.status["current_status"] = "Failure"
                     fs = return_value["fail_stage"]
-                    self._current_message = (
+                    self.status["current_message"] = \
                         "Job '%s' failed at stage '%s' due to: '%s'" % (
-                            job_id, fs, return_value[fs]["fail_reason"]))
+                            job_id, fs, return_value[fs]["fail_reason"])
                 else:
                     job["job_status"] = return_value["status"]
-                    self._current_status = "????"
-                    self._current_message = \
+                    self.status["current_status"] = "????"
+                    self.status["current_message"] = \
                         "Current status is not clear. Celery job returned " \
                         "with status '%s'." % return_value["status"]
 
@@ -286,12 +324,13 @@ class FlowManager():
                 self.graph.serialize()
             else:
                 job["job_status"] = result.state
-                self._current_status = "????"
-                self._current_message = "Current status is not clear."
+                self.status["current_status"] = "????"
+                self.status["current_message"] = \
+                    "Current status is not clear."
         elif job["job_status"] == "not started":
             self.start_job(job_id)
-            self._current_status = "OK"
-            self._current_message = "Job '%s' started." % job_id
+            self.status["current_status"] = "OK"
+            self.status["current_message"] = "Job '%s' started." % job_id
         elif job["job_status"] == "failed":
             # Nothing to do. Requires to restart the latest job!
             return
@@ -354,6 +393,9 @@ class FlowManager():
         )
 
         self.graph.serialize()
+
+        # Set the current goal to calculate the misfit for model 000_1_model
+        self.status["current_goal"] = "misfit 000_1_model"
 
     def __check_data_files(self):
         # A couple of files are needed.
