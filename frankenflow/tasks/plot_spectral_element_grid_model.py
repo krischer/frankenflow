@@ -13,7 +13,7 @@ class PlotSpectralElementGridModel(task.Task):
                                             "the inputs"
 
         folder = os.path.join(self.context["config"]["lasif_project"],
-                              "MODELS")
+                              "MODELS", self.inputs["model_name"])
         assert os.path.exists(folder), "'%s' does not exist" % folder
         assert os.path.isdir(folder), "'%s' is not a folder" % folder
 

@@ -5,6 +5,8 @@ import shutil
 import subprocess
 import time
 
+import paramiko
+
 
 class TaskCheckFailed(Exception):
     pass
@@ -40,6 +42,34 @@ class Task(metaclass=abc.ABCMeta):
         self.working_dir = working_dir
         self.stdout = stdout
         self.stderr = stderr
+
+    def _init_ssh_and_stfp_clients(self):
+        # Load the config.
+        user_config_file = os.path.expanduser("~/.ssh/config")
+        ssh_config = paramiko.SSHConfig()
+        with open(user_config_file) as fh:
+            ssh_config.parse(fh)
+
+        # Use it to get host and user.
+        info = ssh_config.lookup(self.context["config"]["hpc_remote_host"])
+        # For some reason paramiko does not make it directly pluggable
+        # into the connect() method...
+        info["username"] = info["user"]
+        del info["user"]
+
+        self.ssh_client = paramiko.SSHClient()
+        # Should be safe enough in our controlled environment.
+        self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.ssh_client.load_system_host_keys()
+        self.ssh_client.connect(**info, )
+
+        self.sftp_client = self.ssh_client.open_sftp()
+
+    def __del__(self):
+        # Close ssh and sftp clients in the destructor.
+        if hasattr(self, "ssh_client"):
+            self.ssh_client.close()
+            self.sftp_client.close()
 
     def _run_external_script(self, cwd, cmd):
         starttime = datetime.datetime.now()

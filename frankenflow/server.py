@@ -45,6 +45,7 @@ def graph():
         json_graph["edges"].append({
             "from": json_graph["nodes"][edge["source"]]["id"],
             "to": json_graph["nodes"][edge["target"]]["id"],
+            "arrows": "to"
         })
 
     # Move all the meta information to "_meta" and add a label to make it
@@ -62,7 +63,7 @@ def graph():
     for node in json_graph["nodes"]:
       if node["_meta"]["job_status"] == "success":
         node["color"] = "green"
-      elif node["_meta"]["job_status"] == "failure":
+      elif node["_meta"]["job_status"] == "failed":
         node["color"] = "red"
       elif node["_meta"]["job_status"] == "running":
         node["color"] = "yellow"

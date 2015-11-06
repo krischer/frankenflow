@@ -64,11 +64,19 @@ class ProjectModel(task.Task):
 
     def generate_next_steps(self):
         next_steps = [
+            # Produce a plot of the projected model.
             {"task_type": "PlotSpectralElementGridModel",
              "inputs": {
                  "model_name": os.path.basename(self._output_directory)
              },
              "priority": 1
-            }
+            },
+            # Copy the model to the HPC.
+            {"task_type": "CopyModelToHPC",
+             "inputs": {
+                 "model_name": os.path.basename(self._output_directory)
+             },
+             "priority": 0
+             }
         ]
         return next_steps

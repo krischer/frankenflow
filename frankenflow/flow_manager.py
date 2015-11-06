@@ -32,19 +32,27 @@ class Config():
     def assert_config(self):
         self._assert_config_file_exists("agere_cmd")
         self._assert_config_file_exists("lasif_cmd")
+
         self._assert_config_folder_exists("lasif_project")
 
-    def _assert_config_file_exists(self, key):
+        # Variables to deal with the HPC remote host.
+        self._assert_var_exists("hpc_remote_host")
+        self._assert_var_exists("hpc_agere_project")
+        self._assert_var_exists("hpc_remote_input_files_directory")
+
+    def _assert_var_exists(self, key):
         assert key in self.config, \
             "'%s' must be given in the config file." % key
+
+    def _assert_config_file_exists(self, key):
+        self._assert_var_exists(key)
 
         filename = self.config[key]
         assert os.path.isfile(filename), \
             "File '%s' for config value '%s' must exist." % (filename, key)
 
     def _assert_config_folder_exists(self, key):
-        assert key in self.config, \
-            "'%s' must be given in the config file." % key
+        self._assert_var_exists(key)
 
         filename = self.config[key]
         assert os.path.isdir(filename), \

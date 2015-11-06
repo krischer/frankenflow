@@ -15,9 +15,10 @@ function update_graph() {
             console.log(data);
             container = $("#graph_plot")[0];
 
-            var network = new vis.Network(container, data, {});
+            var options = {layout: {randomSeed: 2}};
+            var network = new vis.Network(container, data, options);
 
-            network.on("click", function (params) {
+            network.on("click", function(params) {
                 var node = network.findNode(params.nodes[0])[0];
                 var info = node.options._meta;
                 $("#node_detail").text(JSON.stringify(info, null, 2));
@@ -26,7 +27,6 @@ function update_graph() {
         }
     });
 }
-
 
 
 $(function() {
@@ -64,12 +64,12 @@ $(function() {
 });
 
 
-$('#update_graph_button').on('click', function () {
+$('#update_graph_button').on('click', function() {
     update_graph();
 });
 
 
-$('#iterate_button').on('click', function () {
+$('#iterate_button').on('click', function() {
     $.ajax({
         url: '/iterate',
         success: function(data) {
