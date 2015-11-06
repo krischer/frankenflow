@@ -329,7 +329,7 @@ class FlowManager():
         workflow. Each step will always triggers its next step.
         """
         # Must have an initial model. The rest will be derived.
-        folder = os.path.join(self.optimization_dir, "000_1_Model")
+        folder = os.path.join(self.optimization_dir, "000_1_model")
         assert os.path.exists(folder) and os.path.isdir(folder), (
             "Could not create the initial jobs. No folder '%s' found." %
             folder)

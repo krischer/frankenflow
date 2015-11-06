@@ -38,15 +38,25 @@ class Task(metaclass=abc.ABCMeta):
     """
     def __init__(self, context, inputs, working_dir, stdout, stderr, logfile):
         self.context = context
+        # Shortcut because its required to have all over the place.
+        self.c = self.context["config"]
+
         self.inputs = inputs
         self.working_dir = working_dir
         self.stdout = stdout
         self.stderr = stderr
         self.logfile = logfile
 
+    def _assert_input_exists(self, input):
+        assert input in self.inputs, "'%s' must be part of the inputs" % (
+            input)
+
     def add_log_entry(self, msg):
         with open(self.logfile, "at") as fh:
             fh.write("[%s] %s\n" % (str(datetime.datetime.now()), msg))
+
+    def _model_name_to_iteration(self, model_name):
+        return str(int(model_name.split("_")[0]))
 
     def _init_ssh_and_stfp_clients(self):
         # Load the config.

@@ -131,4 +131,16 @@ class ForwardSimulation(task.Task):
             "Run should have resulted in '%s' events." % c["number_of_events"]
 
     def generate_next_steps(self):
-        pass
+        next_steps = [
+            # Tar the waveforms.
+            {"task_type": "TarWaveformsOnHPC",
+             "inputs": {
+                 "job_number": self.job_number,
+                 # Keep track of the current model and pass it from task to
+                 # task.
+                 "model_name": self.inputs["model_name"]
+             },
+             "priority": 0
+             }
+        ]
+        return next_steps
