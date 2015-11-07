@@ -1,3 +1,5 @@
+import os
+
 from . import task
 
 
@@ -25,7 +27,7 @@ class CalculateMisfit(task.Task):
 
         misfits = {}
 
-        with open(self.stdout, "wt") as fh:
+        with open(self.stdout, "rt") as fh:
             for line in fh:
                 line = line.strip()
                 if not line:
@@ -50,8 +52,28 @@ class CalculateMisfit(task.Task):
         self.misfits = misfits
 
     def check_post_run(self):
-        pass
+        # Store the misfits as they are kind of important.
+        misfit_folder = os.path.join(
+            self.context, self.context["output_folders"]["misfits"])
+
+        for key, value in self.misfits.items():
+            filename = os.path.join(misfit_folder, "iteration_%s.txt" % key)
+
+            if os.path.exists(filename):
+                if key != "0":
+                    raise ValueError(
+                        "Misfit for iteration %s already exists!" % key)
+                continue
+
+            with open(filename, "wt") as fh:
+                fh.write("%g" % value)
 
     def generate_next_steps(self):
-        # XXX: Missing!
-        pass
+        # This not requires an orchestration to figure out what to do next.
+        next_steps = [
+            {"task_type": "Orchestrate",
+             "inputs": self.inputs,
+             "priority": 0
+             }
+        ]
+        return next_steps

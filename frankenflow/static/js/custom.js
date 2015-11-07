@@ -1,6 +1,9 @@
 var info;
 var info_last_accessed;
 
+var network;
+var graph;
+
 
 function update_status_on_page(data) {
     $("#status_status").text(data["status"]);
@@ -8,22 +11,27 @@ function update_status_on_page(data) {
 };
 
 
+function plot_graph() {
+    var container = $("#graph_plot")[0];
+    var options = {layout: {randomSeed: 2}};
+
+    network = new vis.Network(container, graph, options);
+
+    network.on("click", function(params) {
+        var node = network.findNode(params.nodes[0])[0];
+        var info = node.options._meta;
+        $("#node_detail").JSONView(info, { collapsed: true });
+
+    });
+}
+
+
 function update_graph() {
     $.ajax({
         url: '/graph',
         success: function(data) {
-            console.log(data);
-            container = $("#graph_plot")[0];
-
-            var options = {layout: {randomSeed: 2}};
-            var network = new vis.Network(container, data, options);
-
-            network.on("click", function(params) {
-                var node = network.findNode(params.nodes[0])[0];
-                var info = node.options._meta;
-                $("#node_detail").text(JSON.stringify(info, null, 2));
-            });
-
+            graph = data;
+            plot_graph();
         }
     });
 }

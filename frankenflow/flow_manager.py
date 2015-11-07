@@ -1,6 +1,5 @@
 import copy
 import datetime
-import glob
 import json
 import os
 import uuid
@@ -222,7 +221,9 @@ class FlowManager():
             "spec_elem_grid_models": os.path.join(output_folder,
                                                   "spec_elem_grid_models"),
             "regular_grid_kernels": os.path.join(output_folder,
-                                                 "regular_grid_kernels")
+                                                 "regular_grid_kernels"),
+            # Collect all the misfits in simple text files.
+            "misfits": os.path.join(output_folder, "misfits")
         }
 
         for folder in self.output_folders.values():
@@ -350,11 +351,13 @@ class FlowManager():
             job_information["working_dir"], "stderr")
         job_information["logfile"] = os.path.join(
             job_information["working_dir"], "logfile.txt")
+        job_information["current_goal"] = self.current_status["goal"]
 
         result = celery_tasks.launch_job.delay(job_information,
                                                context=self.info)
         self.graph[job_id]["job_status"] = "running"
         self.graph[job_id]["celery_task_id"] = result.task_id
+        self.graph[job_id]["current_goal"] = self.current_status["goal"]
 
         keys = ["working_dir", "stdout", "stderr", "logfile"]
         for key in keys:
