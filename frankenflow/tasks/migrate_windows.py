@@ -19,8 +19,8 @@ class MigrateWindows(task.Task):
     def run(self):
         # First create a new iteration starting from iteration 0.
         cmd = [self.c["lasif_cmd"],
-               "create_successive_iteration 0 %s" %
-               self._model_name_to_iteration(self.inputs["model_name"])]
+               "create_successive_iteration 000_1_model %s" %
+               self.inputs["model_name"]]
 
         returncode = self._run_external_script(
             cwd=self.c["lasif_project"], cmd=cmd)
@@ -30,8 +30,7 @@ class MigrateWindows(task.Task):
 
         # Migrate the windows.
         cmd = [self.c["lasif_cmd"],
-               "migrate_windows 0 %s" %
-               self._model_name_to_iteration(self.inputs["model_name"])]
+               "migrate_windows 000_1_model %s" % self.inputs["model_name"]]
 
         returncode = self._run_external_script(
             cwd=self.c["lasif_project"], cmd=cmd)

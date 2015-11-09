@@ -59,9 +59,6 @@ class Task(metaclass=abc.ABCMeta):
         with open(self.logfile, "at") as fh:
             fh.write("[%s] %s\n" % (str(datetime.datetime.now()), msg))
 
-    def _model_name_to_iteration(self, model_name):
-        return str(int(model_name.split("_")[0]))
-
     def _init_ssh_and_stfp_clients(self):
         # Load the config.
         user_config_file = os.path.expanduser("~/.ssh/config")

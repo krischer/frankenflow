@@ -11,8 +11,6 @@ class UnpackWaveforms(task.Task):
     def check_pre_staging(self):
         self._assert_input_exists("model_name")
         self._assert_input_exists("tar_file")
-        self.iteration = self._model_name_to_iteration(
-            self.inputs["model_name"])
 
         assert os.path.exists(self.inputs["tar_file"]), \
             "File '%s' does not yet exist." % self.inputs["tar_file"]
@@ -26,7 +24,7 @@ class UnpackWaveforms(task.Task):
     def run(self):
         cmd = [self.c["agere_cmd"],
                "unpack_waveforms",
-               "--iteration-name=%s" % str(self.iteration),
+               "--iteration-name=%s" % self.inputs["model_name"],
                "--lasif-project=%s" % self.c["lasif_project"],
                self.inputs["tar_file"]]
         returncode = self._run_external_script(cwd=".", cmd=cmd)

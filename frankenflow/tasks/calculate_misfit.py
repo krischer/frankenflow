@@ -18,8 +18,7 @@ class CalculateMisfit(task.Task):
 
     def run(self):
         cmd = ["mpirun", "-n", "4", self.c["lasif_cmd"],
-               "compare_misfits","0",
-               self._model_name_to_iteration(self.inputs["model_name"])]
+               "compare_misfits","000_1_model", self.inputs["model_name"]]
 
         returncode = self._run_external_script(
             cwd=self.c["lasif_project"], cmd=cmd)
