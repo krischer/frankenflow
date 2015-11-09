@@ -48,8 +48,9 @@ body {
     margin-bottom: 0px;
     background-color: rgb(230, 230, 230);
     font-size: small;
-    font-color: rgba(50, 50, 50);
+    font-color: rgb(50, 50, 50);
     height: 23px;
+    overflow: hidden;
 }
 
 #main_content {
