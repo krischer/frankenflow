@@ -8,7 +8,7 @@ from celery.result import AsyncResult
 import networkx as nx
 import networkx.readwrite.json_graph
 
-from . import celery_tasks, utils
+from . import celery_tasks, utils, tasks
 
 
 class NoJobsLeft(Exception):
@@ -351,7 +351,17 @@ class FlowManager():
             job_information["working_dir"], "stderr")
         job_information["logfile"] = os.path.join(
             job_information["working_dir"], "logfile.txt")
-        job_information["current_goal"] = self.current_status["goal"]
+
+        job_class = tasks.task_map[job_information["task_type"]]
+        # Pass on the goal if the task at hand requires it.
+        if job_class.task_requires_active_goal:
+            job_information["current_goal"] = self.current_status["goal"]
+
+        # The orchestrate node is special. It does require information about
+        # the current goal to be able to deduce the next.
+        if job_information["task_type"] == "Orchestrate":
+            job_information["inputs"]["current_goal"] = \
+                self.current_status["goal"]
 
         result = celery_tasks.launch_job.delay(job_information,
                                                context=self.info)

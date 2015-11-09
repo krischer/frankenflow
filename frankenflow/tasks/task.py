@@ -36,6 +36,10 @@ class Task(metaclass=abc.ABCMeta):
 
     The checking stages have to return True, otherwise it will abort!
     """
+    # By default all tasks require an active goal. Any task that does not
+    # require an active goal will not be assigned one.
+    task_requires_active_goal = True
+
     def __init__(self, context, inputs, working_dir, stdout, stderr, logfile):
         self.context = context
         # Shortcut because its required to have all over the place.
