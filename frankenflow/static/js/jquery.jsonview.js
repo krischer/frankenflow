@@ -22,7 +22,7 @@ Licensed under the MIT License.
     };
 
     JSONFormatter.prototype.jsString = function(s) {
-      s = JSON.stringify(s).slice(1, -1);
+      s = JSON.stringify(s, null, 2).slice(1, -1);
       return this.htmlEncode(s);
     };
 
