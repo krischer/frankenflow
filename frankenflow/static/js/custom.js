@@ -5,16 +5,36 @@ var network;
 var graph;
 var graph_type = "normal";
 
+var current_status;
+var current_message;
+
 
 function update_status_on_page(data) {
-    $("#status_status").text(data["status"]);
-    $("#status_message").text(data["message"]);
+    // Update if nothing changed. If something changed, also update the graph.
+    if (data.status != current_status || data.message != current_message) {
+        console.log(data);
+        current_status = data.status;
+        current_message = data.message;
+
+        $("#status_status").text(current_status);
+        $("#status_message").text(current_message);
+        update_graph();
+    }
 };
 
 
 function plot_graph() {
     var container = $("#graph_plot")[0];
-    var options = {layout: {randomSeed: 2}};
+    var options = {
+        layout: {
+            randomSeed: 2
+        },
+        physics: {
+            barnesHut: {
+                avoidOverlap: 0.1
+            }
+        }
+    };
 
     var this_graph = _.cloneDeep(graph);
 
@@ -86,7 +106,7 @@ $(function() {
 
     (function update_status() {
         $.ajax({
-            url: '/status',
+            url: '/iterate',
             success: function(data) {
                 $("#error_message").hide();
                 info_last_accessed = new Date();

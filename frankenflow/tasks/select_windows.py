@@ -16,7 +16,7 @@ class SelectWindows(task.Task):
 
     def run(self):
         cmd = ["mpirun", "-n", "4", self.c["lasif_cmd"], "select_all_windows",
-               "0"]
+               "000_1_model"]
         returncode = self._run_external_script(
             cwd=self.c["lasif_project"], cmd=cmd)
 
