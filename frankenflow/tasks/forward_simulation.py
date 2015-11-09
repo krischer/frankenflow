@@ -25,8 +25,12 @@ class ForwardSimulation(task.Task):
 
         # Make sure the directory exists and the amount of input files is
         # equal to number of events defined in the config file.
-        input_files = self.sftp_client.listdir(
-            self.remote_input_file_directory)
+        try:
+            input_files = self.sftp_client.listdir(
+                self.remote_input_file_directory)
+        except FileNotFoundError:
+            raise FileNotFoundError("Remote input file directory does not "
+                                    "exists. Are you sure it is correct?")
         assert len(input_files) == \
            self.context["config"]["number_of_events"], (
             "The remote input files directory '%s' must have %i folders." % (

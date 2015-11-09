@@ -1,18 +1,19 @@
 @charset "UTF-8";
 .jsonview {
+  color: #FDFDF7;
   font-family: monospace;
   font-size: 1.1em;
   white-space: pre-wrap; }
   .jsonview .prop {
     font-weight: bold; }
   .jsonview .null {
-    color: red; }
+    color: #EC246C; }
   .jsonview .bool {
-    color: blue; }
+    color: #B585FF;}
   .jsonview .num {
-    color: blue; }
+    color: #FFA11F}
   .jsonview .string {
-    color: green;
+    color: #AFF12F;
     white-space: pre-wrap; }
     .jsonview .string.multiline {
       display: inline-block;
