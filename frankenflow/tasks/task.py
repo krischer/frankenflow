@@ -1,5 +1,6 @@
 import abc
 import datetime
+import glob
 import os
 import shutil
 import subprocess
@@ -50,6 +51,18 @@ class Task(metaclass=abc.ABCMeta):
         self.stdout = stdout
         self.stderr = stderr
         self.logfile = logfile
+
+    def get_events(self):
+        events = glob.glob(os.path.join(self.c["lasif_project"], "EVENTS",
+                                        "*.xml"))
+        events = [os.path.splitext(os.path.basename(_i))[0]
+                  for _i in events]
+
+        assert len(events) == self.c["number_of_events"], \
+            "LASIF projects has %i events. Only %i specified in confg." % (
+                len(events), self.c["number_of_events"])
+
+        return events
 
     def _assert_input_exists(self, input):
         assert input in self.inputs, "'%s' must be part of the inputs" % (

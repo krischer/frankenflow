@@ -2,7 +2,7 @@ import datetime
 import os
 import time
 
-from . import celery
+from . import celery, utils
 from .tasks import task_map
 
 
@@ -54,10 +54,10 @@ def _launch_job_and_report(job):
             elif current_stage == "006_generate_next_steps":
                 report["next_steps"] = ret_val
             _end = time.time()
-        except Exception as e:
+        except Exception:
             _end = time.time()
             info["status"] = "failed"
-            info["fail_reason"] = "%s: %s" % (e.__class__.__name__, str(e))
+            info["fail_reason"] = utils.collect_traceback(5)
             info["end_time_stage"] = str(datetime.datetime.now())
             info["runtime_stage"] = _end - _start
 

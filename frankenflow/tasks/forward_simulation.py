@@ -88,7 +88,7 @@ class ForwardSimulation(task.Task):
 
         # Check if job is done all five minutes.
         while True:
-            time.sleep(300)
+            time.sleep(20)
 
             stdout, stderr = self._run_ssh_command("agere status")
 

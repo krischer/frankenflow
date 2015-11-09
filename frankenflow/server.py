@@ -96,9 +96,8 @@ def serve(flow_manager, port=12111, debug=False, open_to_outside=False):
 
 
 def __main__():
-    fm = FlowManager("/Users/lion/temp/flow_small/flow")
-    serve(flow_manager=fm, port=12111, debug=True,
-          open_to_outside=False)
+    fm = FlowManager("/Users/lion/temp/kochel_flow/flow")
+    serve(flow_manager=fm, port=12111, debug=True, open_to_outside=False)
 
 
 if __name__ == "__main__":

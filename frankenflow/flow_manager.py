@@ -356,9 +356,11 @@ class FlowManager():
             job_information["working_dir"], "logfile.txt")
 
         job_class = tasks.task_map[job_information["task_type"]]
+
         # Pass on the goal if the task at hand requires it.
         if job_class.task_requires_active_goal:
             job_information["current_goal"] = self.current_status["goal"]
+            self.graph[job_id]["current_goal"] = self.current_status["goal"]
 
         # The orchestrate node is special. It does require information about
         # the current goal to be able to deduce the next.
@@ -370,7 +372,6 @@ class FlowManager():
                                                context=self.info)
         self.graph[job_id]["job_status"] = "running"
         self.graph[job_id]["celery_task_id"] = result.task_id
-        self.graph[job_id]["current_goal"] = self.current_status["goal"]
 
         keys = ["working_dir", "stdout", "stderr", "logfile"]
         for key in keys:
