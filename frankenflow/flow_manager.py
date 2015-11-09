@@ -2,6 +2,7 @@ import copy
 import datetime
 import json
 import os
+import shutil
 import uuid
 
 from celery.result import AsyncResult
@@ -156,6 +157,9 @@ class FlowGraph():
     def __getitem__(self, item):
         return self.graph.node[item]
 
+    def __setitem__(self, item, value):
+        self.graph.node[item] = value
+
     def __len__(self):
         return len(self.graph)
 
@@ -241,6 +245,44 @@ class FlowManager():
             "message": self.status["current_message"],
             "goal": self.status["current_goal"]
         }
+
+    def reset_job(self, job_id):
+        # Get the job.
+        job = copy.deepcopy(self.graph[job_id])
+
+        try:
+            del job["celery_task_id"]
+        except KeyError:
+            pass
+
+        try:
+            del job["run_information"]
+        except KeyError:
+            pass
+
+        # Reset files.
+        files = ["stdout", "stderr", "logfile"]
+        for filename in files:
+            if filename not in job:
+                continue
+
+            filename = job[filename]
+
+            if not os.path.exists(filename):
+                continue
+
+            os.remove(filename)
+
+        if "working_dir" in job:
+            wd = job["working_dir"]
+            if os.path.exists(wd):
+                shutil.rmtree(wd)
+            os.makedirs(wd, exist_ok=True)
+
+        job["job_status"] = "not started"
+
+        self.graph[job_id] = job
+        self.graph.serialize()
 
     def iterate(self):
         """

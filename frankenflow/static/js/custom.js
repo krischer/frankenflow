@@ -18,6 +18,16 @@ function plot_graph() {
 
     var this_graph = _.cloneDeep(graph);
 
+    // Update dropdown with list of jobs.
+    var all_node_ids = _.pluck(this_graph.nodes, "id");
+    $("#job_selector").empty().append(function() {
+        var output = "";
+        _.forEach(all_node_ids, function(n) {
+            output += "<option>" + n + "</option>";
+        });
+        return output
+    });
+
     if (graph_type === "clustered") {
         // For each node, add a new edge.
         _.forEach(this_graph.nodes, function(n) {
@@ -43,7 +53,7 @@ function plot_graph() {
     network.on("click", function(params) {
         var node = network.findNode(params.nodes[0])[0];
         var info = node.options._meta;
-        $("#node_detail").JSONView(info, { collapsed: true });
+        $("#node_detail").JSONView(info, {collapsed: true});
 
     });
 }
@@ -110,8 +120,21 @@ $('#update_graph_button').on('click', function() {
     update_graph();
 });
 
+
 $('#toggle_graph_button').on('click', function() {
     toggle_graph();
+});
+
+
+$('#reset_job_button').on('click', function() {
+    var selected_node = $("#job_selector").find(":selected").text();
+    $.ajax({
+        url: '/reset/' + selected_node,
+        success: function() {
+            update_graph();
+        }
+    });
+    $('#reset-job-modal').modal('hide');
 });
 
 

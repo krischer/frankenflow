@@ -35,6 +35,12 @@ def status():
     return flask.jsonify(app.flow_manager.current_status)
 
 
+@app.route("/reset/<job_id>")
+def reset_job(job_id):
+    app.flow_manager.reset_job(job_id)
+    return ""
+
+
 @app.route("/graph")
 def graph():
     json_graph = app.flow_manager.graph.get_json()
