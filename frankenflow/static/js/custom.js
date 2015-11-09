@@ -3,6 +3,7 @@ var info_last_accessed;
 
 var network;
 var graph;
+var graph_type = "normal";
 
 
 function update_status_on_page(data) {
@@ -15,7 +16,29 @@ function plot_graph() {
     var container = $("#graph_plot")[0];
     var options = {layout: {randomSeed: 2}};
 
-    network = new vis.Network(container, graph, options);
+    var this_graph = _.cloneDeep(graph);
+
+    if (graph_type === "clustered") {
+        // For each node, add a new edge.
+        _.forEach(this_graph.nodes, function(n) {
+            this_graph.edges.push({
+                "from": n._meta.current_goal,
+                "to": n.id
+            });
+        });
+
+        // For each goal, add a goal node.
+        var all_goals = _(this_graph.nodes).pluck("_meta.current_goal").unique().filter().value();
+        _.forEach(all_goals, function(n) {
+            this_graph.nodes.push({
+                "id": n,
+                "label": n,
+                "color": "orange"
+            });
+        })
+    }
+
+    network = new vis.Network(container, this_graph, options);
 
     network.on("click", function(params) {
         var node = network.findNode(params.nodes[0])[0];
@@ -23,6 +46,17 @@ function plot_graph() {
         $("#node_detail").JSONView(info, { collapsed: true });
 
     });
+}
+
+
+function toggle_graph() {
+    if (graph_type === "normal") {
+        graph_type = "clustered"
+    }
+    else {
+        graph_type = "normal"
+    }
+    plot_graph();
 }
 
 
@@ -74,6 +108,10 @@ $(function() {
 
 $('#update_graph_button').on('click', function() {
     update_graph();
+});
+
+$('#toggle_graph_button').on('click', function() {
+    toggle_graph();
 });
 
 
