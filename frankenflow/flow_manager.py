@@ -39,6 +39,7 @@ class Config():
         self._assert_var_exists("hpc_remote_host")
         self._assert_var_exists("hpc_agere_project")
         self._assert_var_exists("hpc_remote_input_files_directory")
+        self._assert_var_exists("hpc_agere_cmd")
 
         self._assert_var_exists("number_of_events", var_type=int)
         self._assert_var_exists("forward_wavefield_storage_degree",

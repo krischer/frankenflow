@@ -58,10 +58,11 @@ class ForwardSimulation(task.Task):
         c = self.context["config"]
 
         # Make sure the model directory exists.
-        cmd = ("agere run_forward --model={model_name} --fw-lpd={fw_lpd} "
+        cmd = ("{agere} run_forward --model={model_name} --fw-lpd={fw_lpd} "
                "--wall-time-per-event={walltime_per_event} "
                "--pml-count={pml_count} "
                "--parallel-events={parallel_events} {input_files}").format(
+            agere=self.c["hpc_agere_cmd"],
             model_name=self.inputs["model_name"],
             fw_lpd=c["forward_wavefield_storage_degree"],
             walltime_per_event=c["walltime_per_event_forward"],
@@ -88,13 +89,15 @@ class ForwardSimulation(task.Task):
                 self.job_number = line.split("'")[1]
                 break
         else:
-            raise ValueError("Could not find run number on stdout")
+            raise ValueError("Could not find run number on stdout: %s" %
+                             stdout)
 
         # Check if job is done all five minutes.
         while True:
             time.sleep(20)
 
-            stdout, stderr = self._run_ssh_command("agere status")
+            stdout, stderr = self._run_ssh_command(
+                "%s status" % self.c["hpc_agere_cmd"])
 
             finished = False
 

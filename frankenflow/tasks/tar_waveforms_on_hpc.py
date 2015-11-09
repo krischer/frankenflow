@@ -38,7 +38,8 @@ class TarWaveformsOnHPC(task.Task):
 
     def run(self):
         # This can take quite a bit of time ...
-        stdout, stderr = self._run_ssh_command('agere tar_waveforms')
+        stdout, stderr = self._run_ssh_command('%s tar_waveforms' %
+                                               self.c["hpc_agere_cmd"])
 
         with open(self.stdout, "at") as fh:
             fh.write("\n\n")
