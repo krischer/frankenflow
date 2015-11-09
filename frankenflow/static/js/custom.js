@@ -18,8 +18,9 @@ function plot_graph() {
 
     var this_graph = _.cloneDeep(graph);
 
-    // Update dropdown with list of jobs.
-    var all_node_ids = _.pluck(this_graph.nodes, "id");
+    // Update dropdown with list of jobs. Sort so the latest job is
+    // preselected.
+    var all_node_ids = _.pluck(this_graph.nodes, "id").sort().reverse();
     $("#job_selector").empty().append(function() {
         var output = "";
         _.forEach(all_node_ids, function(n) {
