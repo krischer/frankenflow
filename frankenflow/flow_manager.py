@@ -307,6 +307,9 @@ class FlowManager():
                                 priority=prio,
                                 from_node=job_id)
 
+                    if "new_goal" in return_value:
+                        self.status["current_goal"] = return_value["new_goal"]
+
                 elif return_value["status"] == "failed":
                     job["job_status"] = "failed"
                     self.status["current_status"] = "Failure"
