@@ -12,7 +12,6 @@ var current_message;
 function update_status_on_page(data) {
     // Update if nothing changed. If something changed, also update the graph.
     if (data.status != current_status || data.message != current_message) {
-        console.log(data);
         current_status = data.status;
         current_message = data.message;
 
@@ -39,6 +38,29 @@ function plot_graph() {
     };
 
     var this_graph = _.cloneDeep(graph);
+
+    // Loop over all nodes and add a title which will show as a popup.
+    _.forEach(this_graph.nodes, function(n) {
+        var ri = n._meta.run_information;
+
+        // Finished.
+        if (ri && ri["001_check_pre_staging"] && ri["006_generate_next_steps"]) {
+
+            var total_run_time =
+                ri["001_check_pre_staging"].runtime_stage +
+                ri["002_stage_data"].runtime_stage +
+                ri["003_check_post_staging"].runtime_stage +
+                ri["004_run"].runtime_stage +
+                ri["005_check_post_run"].runtime_stage +
+                ri["006_generate_next_steps"].runtime_stage;
+
+            n["title"] = "Run time of task: " + total_run_time.toFixed(2) +
+                " sec<br>" +
+                "Finished " + moment(ri["006_generate_next_steps"].end_time_stage).fromNow();
+
+            return
+        }
+    });
 
     // Update dropdown with list of jobs. Sort so the latest job is
     // preselected.
