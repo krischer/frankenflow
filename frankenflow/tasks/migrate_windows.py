@@ -7,6 +7,10 @@ class MigrateWindows(task.Task):
 
     Will also create a new iteration.
     """
+    @property
+    def required_inputs(self):
+        return ["model_name"]
+
     def check_pre_staging(self):
         pass
 
@@ -45,8 +49,6 @@ class MigrateWindows(task.Task):
         # Calculate the misfit.
         next_steps = [
             {"task_type": "CalculateMisfit",
-             # Just pass along the inputs
-             "inputs": self.inputs,
              "priority": 0
              }
         ]

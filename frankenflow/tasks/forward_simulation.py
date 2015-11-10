@@ -11,13 +11,12 @@ class ForwardSimulation(task.Task):
 
     The model must reside in the associated LASIF project.
     """
+    @property
+    def required_inputs(self):
+        return ["model_name"]
+
     def check_pre_staging(self):
         self._init_ssh_and_stfp_clients()
-
-        assert "model_name" in self.inputs, "'model_name' must be part of " \
-                                            "the inputs"
-
-        self.inputs["model_name"] = self.inputs["model_name"].lower()
 
         # Remote input file directory.
         self.remote_input_file_directory = \
@@ -86,7 +85,7 @@ class ForwardSimulation(task.Task):
         for line in stdout:
             line = line.strip()
             if "Initializing run" in line:
-                self.job_number = line.split("'")[1]
+                self.hpc_agere_fwd_job_id = line.split("'")[1]
                 break
         else:
             raise ValueError("Could not find run number on stdout: %s" %
@@ -106,7 +105,7 @@ class ForwardSimulation(task.Task):
                 if line.startswith("JOB NUMBER") or line.startswith("====="):
                     continue
                 line = line.split()
-                if line[0] != self.job_number:
+                if line[0] != self.hpc_agere_fwd_job_id:
                     continue
 
                 status = line[1].upper()
@@ -118,7 +117,7 @@ class ForwardSimulation(task.Task):
                 break
             else:
                 raise ValueError("`agere_status` did not contain run '%s'" %
-                                 self.job_number)
+                                 self.hpc_agere_fwd_job_id)
 
             if not finished:
                 continue
@@ -131,7 +130,7 @@ class ForwardSimulation(task.Task):
         # as my current SES3D version sometimes chooses not to simulate all
         # events.
         self.output_directory = os.path.join(
-            c["hpc_agere_project"], "__WAVEFORMS", self.job_number)
+            c["hpc_agere_project"], "__WAVEFORMS", self.hpc_agere_fwd_job_id)
 
         event_folders = self.sftp_client.listdir(self.output_directory)
         assert len(event_folders) == c["number_of_events"], \
@@ -142,10 +141,7 @@ class ForwardSimulation(task.Task):
             # Tar the waveforms.
             {"task_type": "TarWaveformsOnHPC",
              "inputs": {
-                 "job_number": self.job_number,
-                 # Keep track of the current model and pass it from task to
-                 # task.
-                 "model_name": self.inputs["model_name"]
+                 "hpc_agere_fwd_job_id": self.hpc_agere_fwd_job_id
              },
              "priority": 0
              }

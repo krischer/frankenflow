@@ -8,21 +8,16 @@ class TarWaveformsOnHPC(task.Task):
     """
     Tar the waveforms on the HPC. This can easily take on hour.
     """
+    @property
+    def required_inputs(self):
+        return ["hpc_agere_fwd_job_id"]
+
     def check_pre_staging(self):
         self._init_ssh_and_stfp_clients()
 
-        # Make sure the model name is kept track of.
-        assert "model_name" in self.inputs, "'model_name' must be part of " \
-                                            "the inputs"
-
-        self.inputs["model_name"] = self.inputs["model_name"].lower()
-
-        assert "job_number" in self.inputs, "'job_number' must be part of " \
-                                            "the inputs"
-
         self.expected_output_file = os.path.join(
             self.c["hpc_agere_project"], "__WAVEFORMS",
-            "%s.tar" % self.inputs["job_number"])
+            "%s.tar" % self.inputs["hpc_agere_fwd_job_id"])
 
         # Make sure it does not yet exist.
         files = self.sftp_client.listdir(
@@ -71,11 +66,7 @@ class TarWaveformsOnHPC(task.Task):
             # Now copy the waveforms from the HPC.
             {"task_type": "CopyWaveformsFromHPC",
              "inputs": {
-                 "job_number": self.inputs["job_number"],
-                 "tar_file": self.expected_output_file,
-                 # Keep track of the current model and pass it from task to
-                 # task.
-                 "model_name": self.inputs["model_name"]
+                 "waveform_tar_file": self.expected_output_file,
              },
              "priority": 0
              }

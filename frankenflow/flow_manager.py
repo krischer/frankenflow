@@ -446,14 +446,14 @@ class FlowManager():
         # Add a project model task at the default priority.
         self.graph.add_job(
             task_type="ProjectModel",
-            inputs={"model_folder": folder},
+            inputs={"regular_model_folder": folder},
             from_node=job_id
         )
 
         # Add a job to plot the starting model at a higher priority.
         self.graph.add_job(
             task_type="PlotRegularGridModel",
-            inputs={"model_folder": folder},
+            inputs={"regular_model_folder": folder},
             priority=1,
             from_node=job_id
         )

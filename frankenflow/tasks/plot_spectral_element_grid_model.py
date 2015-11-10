@@ -11,10 +11,11 @@ class PlotSpectralElementGridModel(task.Task):
     # No goal required for plotting. It is just a side activity.
     task_requires_active_goal = False
 
-    def check_pre_staging(self):
-        assert "model_name" in self.inputs, "'model_name' must be part of " \
-                                            "the inputs"
+    @property
+    def required_inputs(self):
+        return ["model_name"]
 
+    def check_pre_staging(self):
         folder = os.path.join(self.context["config"]["lasif_project"],
                               "MODELS", self.inputs["model_name"])
         assert os.path.exists(folder), "'%s' does not exist" % folder

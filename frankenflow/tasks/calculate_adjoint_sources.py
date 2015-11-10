@@ -8,8 +8,11 @@ class CalculateAdjointSources(task.Task):
     """
     Calculates the adjoint sources for a certain model.
     """
+    @property
+    def required_inputs(self):
+        return ["model_name"]
+
     def check_pre_staging(self):
-        self._assert_input_exists("model_name")
         self.events = self.get_events()
 
         ad_srcs = self.get_adjoint_source_folders()
@@ -57,8 +60,6 @@ class CalculateAdjointSources(task.Task):
         next_steps = []
         next_steps.append({
             "task_type": "CopyAdjointSourcesToHPC",
-             # Just pass along the inputs
-             "inputs": self.inputs,
              "priority": 0
          })
         return next_steps

@@ -49,6 +49,13 @@ class Task(metaclass=abc.ABCMeta):
         self.stderr = stderr
         self.logfile = logfile
 
+    @abc.abstractproperty
+    def required_inputs(self):
+        """
+        A set of keys that must be available as inputs.
+        """
+        pass
+
     @abc.abstractmethod
     def check_pre_staging(self):
         pass

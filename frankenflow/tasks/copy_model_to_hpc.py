@@ -10,10 +10,11 @@ class CopyModelToHPC(task.Task):
 
     The model must reside in the associated LASIF project.
     """
-    def check_pre_staging(self):
-        assert "model_name" in self.inputs, "'model_name' must be part of " \
-                                            "the inputs"
+    @property
+    def required_inputs(self):
+        return ["model_name"]
 
+    def check_pre_staging(self):
         self.inputs["model_name"] = self.inputs["model_name"].lower()
 
         # Make sure the folder does exist.
@@ -83,10 +84,7 @@ class CopyModelToHPC(task.Task):
         next_steps = [
             # Run the forward adjoint.
             {"task_type": "ForwardSimulation",
-             "inputs": {
-                 "model_name": os.path.basename(self.inputs["model_name"])
-             },
              "priority": 0
-             }
+            }
         ]
         return next_steps

@@ -5,6 +5,10 @@ class BuildLASIFCaches(task.Task):
     """
     Unpack the waveforms to a certain LASIF project.
     """
+    @property
+    def required_inputs(self):
+        return ["model_name"]
+
     def check_pre_staging(self):
         pass
 
@@ -32,15 +36,11 @@ class BuildLASIFCaches(task.Task):
         if self.inputs["model_name"] == "000_1_model":
             next_steps.append({
                 "task_type": "SelectWindows",
-                 # Just pass along the inputs
-                 "inputs": self.inputs,
                  "priority": 0
              })
         else:
             next_steps.append({
                 "task_type": "MigrateWindows",
-                # Just pass along the inputs
-                "inputs": self.inputs,
                 "priority": 0
             })
         return next_steps

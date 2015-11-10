@@ -7,6 +7,10 @@ class CalculateMisfit(task.Task):
     """
     Calculate the misfit.
     """
+    @property
+    def required_inputs(self):
+        return ["model_name"]
+
     def check_pre_staging(self):
         pass
 
@@ -71,7 +75,6 @@ class CalculateMisfit(task.Task):
         # This not requires an orchestration to figure out what to do next.
         next_steps = [
             {"task_type": "Orchestrate",
-             "inputs": self.inputs,
              "priority": 0
              }
         ]

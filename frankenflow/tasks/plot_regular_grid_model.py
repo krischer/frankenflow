@@ -12,13 +12,16 @@ class PlotRegularGridModel(task.Task):
     # No goal required for plotting. It is just a side activity.
     task_requires_active_goal = False
 
-    def check_pre_staging(self):
-        # Make sure all required input files exist.
-        assert "model_folder" in self.inputs
-        utils.assert_files_exist(
-            self.inputs["model_folder"], ["x_rho", "x_vp", "x_vsh", "x_vsv"])
+    @property
+    def required_inputs(self):
+        return ["regular_model_folder"]
 
-        self.model_name = os.path.basename(self.inputs["model_folder"])
+    def check_pre_staging(self):
+        utils.assert_files_exist(
+            self.inputs["regular_model_folder"],
+            ["x_rho", "x_vp", "x_vsh", "x_vsv"])
+
+        self.model_name = os.path.basename(self.inputs["regular_model_folder"])
 
         # Make sure the output files don't.
         self.outputs = {
@@ -43,7 +46,7 @@ class PlotRegularGridModel(task.Task):
                 self.context["config"]["agere_cmd"],
                 "plot_kernel",
                 "--lasif_project=%s" % self.context["config"]["lasif_project"],
-                "%s" % os.path.join(self.inputs["model_folder"], key),
+                "%s" % os.path.join(self.inputs["regular_model_folder"], key),
                 "100",
                 "--filename=%s" % os.path.join(self.working_dir, value),
                 "--blockfile_folder=%s" % self.context["data_folder"]]

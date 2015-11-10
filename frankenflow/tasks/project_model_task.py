@@ -9,11 +9,15 @@ class ProjectModel(task.Task):
     """
     Task projecting a model.
     """
+    @property
+    def required_inputs(self):
+        return ["regular_model_folder"]
+
     def check_pre_staging(self):
         # Make sure all required input files exist.
-        assert "model_folder" in self.inputs
         utils.assert_files_exist(
-            self.inputs["model_folder"], ["x_rho", "x_vp", "x_vsh", "x_vsv"])
+            self.inputs["regular_model_folder"],
+            ["x_rho", "x_vp", "x_vsh", "x_vsv"])
 
         # Make sure the output files don't.
         utils.assert_files_dont_exist(self.working_dir, [
@@ -22,7 +26,7 @@ class ProjectModel(task.Task):
         # Copy directly to LASIF directory.
         self._output_directory = os.path.join(
             self.context["config"]["lasif_project"], "MODELS",
-            os.path.basename(self.inputs["model_folder"]))
+            os.path.basename(self.inputs["regular_model_folder"]))
 
         assert not os.path.exists(self._output_directory), \
             "Folder '%s' already exists." % self._output_directory
@@ -38,7 +42,7 @@ class ProjectModel(task.Task):
             "x_vsv": "dvsv"
         }
         for src, dest in cp_map.items():
-            src = os.path.join(self.inputs["model_folder"], src)
+            src = os.path.join(self.inputs["regular_model_folder"], src)
             dest = os.path.join(self.working_dir, dest)
             shutil.copy2(src, dest)
 

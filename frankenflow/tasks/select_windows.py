@@ -5,6 +5,10 @@ class SelectWindows(task.Task):
     """
     Select windows for iteration 0.
     """
+    @property
+    def required_inputs(self):
+        return []
+
     def check_pre_staging(self):
         pass
 
@@ -30,8 +34,6 @@ class SelectWindows(task.Task):
         # Calculate the misfit.
         next_steps = [
             {"task_type": "CalculateMisfit",
-             # Just pass along the inputs
-             "inputs": self.inputs,
              "priority": 0
              }
         ]

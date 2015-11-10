@@ -8,10 +8,11 @@ class CopyAdjointSourcesToHPC(task.Task):
     """
     Copy adjoint sources to the HPC.
     """
-    def check_pre_staging(self):
-        self._assert_input_exists("model_name")
-        self._assert_input_exists("hpc_agere_run_name")
+    @property
+    def required_inputs(self):
+        return ["model_name"]
 
+    def check_pre_staging(self):
         # Find the generated adjoint sources and make sure they exist for
         # every event.
         self.events = self.get_events()
@@ -80,7 +81,6 @@ class CopyAdjointSourcesToHPC(task.Task):
             # Run the forward adjoint.
             {"task_type": "AdjointSimulation",
              "inputs": {
-                 "model_name": self.inputs["model_name"],
                  "adjoint_source_directory":
                      self.remote_adjoint_source_directory
              },

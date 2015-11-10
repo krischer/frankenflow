@@ -10,8 +10,11 @@ class Orchestrate(task.Task):
     # node is to assign a new goal.
     task_requires_active_goal = False
 
+    @property
+    def required_inputs(self):
+        return ["current_goal"]
+
     def check_pre_staging(self):
-        self._assert_input_exists("current_goal")
         self.current_goal = self.inputs["current_goal"]
 
     def stage_data(self):
