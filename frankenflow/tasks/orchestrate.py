@@ -36,10 +36,13 @@ class Orchestrate(task.Task):
         # Initial model. Now we also need the gradient. The first step here
         # is to calculate the adjoint sources.
         if model == "000_1_model":
+            # Make sure the forward run is part of the inputs.
+            self._assert_input_exists("hpc_agere_fwd_job_id")
             self.next_steps = [{
                 "task_type": "CalculateAdjointSources",
                 "inputs": {
-                    "model_name": model
+                    "model_name": model,
+                    "hpc_agere_fwd_job_id": self.inputs["hpc_agere_fwd_job_id"]
                 },
                 "priority": 0
             }]

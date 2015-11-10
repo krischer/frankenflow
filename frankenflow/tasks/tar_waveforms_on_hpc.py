@@ -66,7 +66,7 @@ class TarWaveformsOnHPC(task.Task):
             # Now copy the waveforms from the HPC.
             {"task_type": "CopyWaveformsFromHPC",
              "inputs": {
-                 "waveform_tar_file": self.expected_output_file,
+                 "remote_waveform_tar_file": self.expected_output_file,
              },
              "priority": 0
              }

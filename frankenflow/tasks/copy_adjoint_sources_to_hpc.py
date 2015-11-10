@@ -13,6 +13,8 @@ class CopyAdjointSourcesToHPC(task.Task):
         return {"model_name"}
 
     def check_pre_staging(self):
+        self._init_ssh_and_stfp_clients()
+
         # Find the generated adjoint sources and make sure they exist for
         # every event.
         self.events = self.get_events()
@@ -38,8 +40,14 @@ class CopyAdjointSourcesToHPC(task.Task):
         self.remote_adjoint_source_directory = os.path.join(
             self.c["hpc_adjoint_source_folder"], self.inputs["model_name"])
 
-        contents = self.sftp_client.listdir(
-            self.c["hpc_adjoint_source_folder"])
+        try:
+            contents = self.sftp_client.listdir(
+                self.c["hpc_adjoint_source_folder"])
+        except FileNotFoundError:
+            self.sftp_client.mkdir(self.c["hpc_adjoint_source_folder"])
+            contents = self.sftp_client.listdir(
+                self.c["hpc_adjoint_source_folder"])
+
         assert self.inputs["model_name"] not in contents, \
             "Remote folder '%s' already exists." % (
                 self.remote_adjoint_source_directory)
@@ -59,11 +67,12 @@ class CopyAdjointSourcesToHPC(task.Task):
 
             cmd = ["rsync", "-aP", folder + "/", "%s:%s" % (
                 self.c["hpc_remote_host"], target)]
-            print(cmd)
+
+            self._run_external_script(cwd=".", cmd=cmd)
 
     def check_post_run(self):
         # Make sure everything has been copied.
-        for folder in self.folder_to_copy:
+        for folder in self.folders_to_copy:
             local_contents = set(os.listdir(folder))
             remote_folder = os.path.join(
                 self.remote_adjoint_source_directory,
@@ -81,7 +90,7 @@ class CopyAdjointSourcesToHPC(task.Task):
             # Run the forward adjoint.
             {"task_type": "AdjointSimulation",
              "inputs": {
-                 "adjoint_source_directory":
+                 "remote_adjoint_source_directory":
                      self.remote_adjoint_source_directory
              },
              "priority": 0

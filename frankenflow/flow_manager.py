@@ -343,10 +343,18 @@ class FlowManager():
                     self.status["current_status"] = "SUCCESS"
 
                     if return_value["next_steps"]:
-
                         for step in return_value["next_steps"]:
-                            inputs = copy.deepcopy(job["inputs"])
-                            inputs.update(step["inputs"])
+
+                            if "inputs" in step:
+                                inputs = copy.deepcopy(step["inputs"])
+                            else:
+                                inputs = {}
+
+                            # Pass along previous inputs for everything but
+                            # the orchestrate task. That task can reset the
+                            # inputs and only pass along the required inputs.
+                            if job["task_type"] != "Orchestrate":
+                                inputs.update(job["inputs"])
 
                             prio = step["priority"] \
                                 if "priority" in step else 0
