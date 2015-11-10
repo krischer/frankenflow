@@ -58,8 +58,8 @@ class CopyGradientsFromHPC(task.Task):
 
     def generate_next_steps(self):
         next_steps = [
-            # Now copy the waveforms from the HPC.
-            {"task_type": "SumSmoothAndPreconditionGradients",
+            # Sum the gradients.
+            {"task_type": "SumGradients",
              "inputs": {
                  "local_kernel_directory": self.local_kernel_directory
              },
