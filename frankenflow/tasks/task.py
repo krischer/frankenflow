@@ -52,6 +52,30 @@ class Task(metaclass=abc.ABCMeta):
         self.stderr = stderr
         self.logfile = logfile
 
+    @abc.abstractmethod
+    def check_pre_staging(self):
+        pass
+
+    @abc.abstractmethod
+    def stage_data(self):
+        pass
+
+    @abc.abstractmethod
+    def check_post_staging(self):
+        pass
+
+    @abc.abstractmethod
+    def run(self):
+        pass
+
+    @abc.abstractmethod
+    def check_post_run(self):
+        pass
+
+    @abc.abstractmethod
+    def generate_next_steps(self):
+        pass
+
     def get_events(self):
         events = glob.glob(os.path.join(self.c["lasif_project"], "EVENTS",
                                         "*.xml"))
@@ -159,27 +183,3 @@ class Task(metaclass=abc.ABCMeta):
         for file in self.context["data"]["block_files"]:
             filename = os.path.basename(file)
             shutil.copy2(file, os.path.join(target_dir, filename))
-
-    @abc.abstractmethod
-    def check_pre_staging(self):
-        pass
-
-    @abc.abstractmethod
-    def stage_data(self):
-        pass
-
-    @abc.abstractmethod
-    def check_post_staging(self):
-        pass
-
-    @abc.abstractmethod
-    def run(self):
-        pass
-
-    @abc.abstractmethod
-    def check_post_run(self):
-        pass
-
-    @abc.abstractmethod
-    def generate_next_steps(self):
-        pass
