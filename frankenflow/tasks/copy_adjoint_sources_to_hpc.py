@@ -10,6 +10,7 @@ class CopyAdjointSourcesToHPC(task.Task):
     """
     def check_pre_staging(self):
         self._assert_input_exists("model_name")
+        self._assert_input_exists("hpc_agere_run_name")
 
         # Find the generated adjoint sources and make sure they exist for
         # every event.
@@ -32,38 +33,56 @@ class CopyAdjointSourcesToHPC(task.Task):
 
         self.folders_to_copy = ad_srcs
 
+        # Folder of the adjoint source on the remote HPC host.
+        self.remote_adjoint_source_directory = os.path.join(
+            self.c["hpc_adjoint_source_folder"], self.inputs["model_name"])
+
+        contents = self.sftp_client.listdir(
+            self.c["hpc_adjoint_source_folder"])
+        assert self.inputs["model_name"] not in contents, \
+            "Remote folder '%s' already exists." % (
+                self.remote_adjoint_source_directory)
+
     def stage_data(self):
-        pass
+        self.sftp_client.mkdir(self.remote_adjoint_source_directory)
 
     def check_post_staging(self):
-        pass
+        # Will make sure it exists.
+        self.sftp_client.listdir(self.remote_adjoint_source_directory)
 
     def run(self):
-        self.input_files = os.listdir(self.model_folder)
-        for filename in self.input_files:
-            src = os.path.join(self.model_folder, filename)
-            target = os.path.join(self.remote_target_directory, filename)
-            self.sftp_client.put(src, target)
+        for folder in self.folders_to_copy:
+            target = os.path.join(
+                self.remote_adjoint_source_directory,
+                os.path.basename(folder))
+
+            cmd = ["rsync", "-aP", folder + "/", "%s:%s" % (
+                self.c["hpc_remote_host"], target)]
+            print(cmd)
 
     def check_post_run(self):
-        # Make sure all files have been copied.
-        remote_files = set(
-            self.sftp_client.listdir(self.remote_target_directory))
+        # Make sure everything has been copied.
+        for folder in self.folder_to_copy:
+            local_contents = set(os.listdir(folder))
+            remote_folder = os.path.join(
+                self.remote_adjoint_source_directory,
+                os.path.basename(folder))
+            remote_contents = set(self.sftp_client.listdir(remote_folder))
 
-        local_files = set(self.input_files)
+            difference = local_contents.difference(remote_contents)
 
-        missing_files = local_files.difference(remote_files)
-
-        assert not missing_files, \
-            "The following files could not be copied: %s" % (
-                ", ".join(missing_files))
+            assert not difference, (
+                "Remote folder '%s' has different contents than local folder "
+                "'%s'." % (remote_folder, folder))
 
     def generate_next_steps(self):
         next_steps = [
             # Run the forward adjoint.
-            {"task_type": "ForwardSimulation",
+            {"task_type": "AdjointSimulation",
              "inputs": {
-                 "model_name": os.path.basename(self.inputs["model_name"])
+                 "model_name": self.inputs["model_name"],
+                 "adjoint_source_directory":
+                     self.remote_adjoint_source_directory
              },
              "priority": 0
              }

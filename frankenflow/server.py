@@ -74,8 +74,10 @@ def graph():
       elif node["_meta"]["job_status"] == "running":
         node["color"] = "yellow"
 
-      if node["label"] == "Start":
+      if node["label"] in ("Start", "Orchestrate"):
           node["color"] = "white"
+          node["shape"] = "box"
+
 
     return flask.jsonify(json_graph)
 

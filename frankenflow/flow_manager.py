@@ -40,6 +40,8 @@ class Config():
         self._assert_var_exists("hpc_agere_project")
         self._assert_var_exists("hpc_remote_input_files_directory")
         self._assert_var_exists("hpc_agere_cmd")
+        # Folder to store the adjoint sources on the hpc.
+        self._assert_var_exists("hpc_adjoint_source_folder")
 
         self._assert_var_exists("number_of_events", var_type=int)
         self._assert_var_exists("forward_wavefield_storage_degree",
@@ -341,12 +343,16 @@ class FlowManager():
                     self.status["current_status"] = "SUCCESS"
 
                     if return_value["next_steps"]:
+
                         for step in return_value["next_steps"]:
+                            inputs = copy.deepcopy(job["inputs"])
+                            inputs.update(step["inputs"])
+
                             prio = step["priority"] \
                                 if "priority" in step else 0
                             self.graph.add_job(
                                 task_type=step["task_type"],
-                                inputs=step["inputs"],
+                                inputs=inputs,
                                 priority=prio,
                                 from_node=job_id)
 

@@ -31,8 +31,10 @@ function plot_graph() {
         },
         physics: {
             barnesHut: {
-                avoidOverlap: 0.1
-            }
+                springLength: 140,
+                avoidOverlap: 0.10,
+                damping: 0.3
+            },
         }
     };
 
@@ -53,8 +55,9 @@ function plot_graph() {
         // For each node, add a new edge.
         _.forEach(this_graph.nodes, function(n) {
             this_graph.edges.push({
-                "from": n._meta.current_goal,
-                "to": n.id
+                from: n._meta.current_goal,
+                to: n.id,
+                dashes: true
             });
         });
 
@@ -64,7 +67,8 @@ function plot_graph() {
             this_graph.nodes.push({
                 "id": n,
                 "label": n,
-                "color": "orange"
+                "color": "orange",
+                "shape": "box"
             });
         })
     }
