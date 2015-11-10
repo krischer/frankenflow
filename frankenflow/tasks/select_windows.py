@@ -7,7 +7,7 @@ class SelectWindows(task.Task):
     """
     @property
     def required_inputs(self):
-        return []
+        return set()
 
     def check_pre_staging(self):
         pass

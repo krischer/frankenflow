@@ -10,7 +10,7 @@ class UnpackWaveforms(task.Task):
     """
     @property
     def required_inputs(self):
-        return ["waveform_tar_file", "model_name"]
+        return {"waveform_tar_file", "model_name"}
 
     def check_pre_staging(self):
         assert os.path.exists(self.inputs["waveform_tar_file"]), \

@@ -12,7 +12,7 @@ class Orchestrate(task.Task):
 
     @property
     def required_inputs(self):
-        return ["current_goal"]
+        return {"current_goal"}
 
     def check_pre_staging(self):
         self.current_goal = self.inputs["current_goal"]

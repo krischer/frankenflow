@@ -13,7 +13,7 @@ class PlotSpectralElementGridModel(task.Task):
 
     @property
     def required_inputs(self):
-        return ["model_name"]
+        return {"model_name"}
 
     def check_pre_staging(self):
         folder = os.path.join(self.context["config"]["lasif_project"],

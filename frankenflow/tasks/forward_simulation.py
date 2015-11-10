@@ -13,7 +13,7 @@ class ForwardSimulation(task.Task):
     """
     @property
     def required_inputs(self):
-        return ["model_name"]
+        return {"model_name"}
 
     def check_pre_staging(self):
         self._init_ssh_and_stfp_clients()

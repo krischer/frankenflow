@@ -11,7 +11,7 @@ class ProjectModel(task.Task):
     """
     @property
     def required_inputs(self):
-        return ["regular_model_folder"]
+        return {"regular_model_folder"}
 
     def check_pre_staging(self):
         # Make sure all required input files exist.

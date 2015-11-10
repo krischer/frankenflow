@@ -10,7 +10,7 @@ class TarWaveformsOnHPC(task.Task):
     """
     @property
     def required_inputs(self):
-        return ["hpc_agere_fwd_job_id"]
+        return {"hpc_agere_fwd_job_id"}
 
     def check_pre_staging(self):
         self._init_ssh_and_stfp_clients()

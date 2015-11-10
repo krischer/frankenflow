@@ -10,7 +10,7 @@ class CopyWaveformsFromHPC(task.Task):
     """
     @property
     def required_inputs(self):
-        return ["waveform_tar_file"]
+        return {"waveform_tar_file"}
 
     def check_pre_staging(self):
         self._init_ssh_and_stfp_clients()
