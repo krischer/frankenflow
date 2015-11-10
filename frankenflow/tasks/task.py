@@ -43,6 +43,15 @@ class Task(metaclass=abc.ABCMeta):
         # Shortcut because its required to have all over the place.
         self.c = self.context["config"]
 
+        # Check the required inputs.
+        available_inputs = set(inputs.keys())
+        required_inputs = set(self.required_inputs)
+
+        missing_inputs = required_inputs.difference(available_inputs)
+        assert not missing_inputs, \
+            "The following inputs are not available: %s" % (
+                ", ".join(missing_inputs))
+
         self.inputs = inputs
         self.working_dir = working_dir
         self.stdout = stdout
