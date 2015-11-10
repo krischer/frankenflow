@@ -27,15 +27,12 @@ class Task(metaclass=abc.ABCMeta):
        check if everything necessary is available.
     2. stage_data: Stage the data for the run. Only do quick things
        here...for long data copies and moves use a separate task.
-    3. check_post_data_stage: Check if the staging was successful.
+    3. check_post_staging: Check if the staging was successful.
     4. run: Run the task.
     5. check_post_run: Check if the task has been successful.
-    6. stage_data_out: Copy the output data where it needs to go and
-        clean-up everything.
-    7. finalize: Final check. Has to return True for the task to be
-       considered done!
+    6. generate_next_steps: Generate the next task.
 
-    The checking stages have to return True, otherwise it will abort!
+    If any stage raises, the task will not complete successfully.
     """
     # By default all tasks require an active goal. Any task that does not
     # require an active goal will not be assigned one.
