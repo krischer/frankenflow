@@ -116,11 +116,9 @@ class AdjointSimulation(task.Task):
                 break
 
     def check_post_run(self):
-        c = self.context["config"]
-
+        # Make sure some kernels have been created.
         kernel_folder = self.sftp_client.listdir(self.hpc_kernel_directory)
-        assert len(kernel_folder) == c["number_of_events"], \
-            "Run should have resulted in '%s' kernels." % c["number_of_events"]
+        assert len(kernel_folder), "Run should have resulted in some kernels."
 
     def generate_next_steps(self):
         next_steps = [

@@ -15,6 +15,19 @@ class TarWaveformsOnHPC(task.Task):
     def check_pre_staging(self):
         self._init_ssh_and_stfp_clients()
 
+        c = self.context["config"]
+
+        # Check if all events have been simulated. This is done in this
+        # stage to manually finish the previous one if necessary. The
+        # current SES3D version I have sometimes chooses not to simulate all
+        # events.
+        waveform_directory = os.path.join(
+            c["hpc_agere_project"], "__WAVEFORMS", self.hpc_agere_fwd_job_id)
+
+        event_folders = self.sftp_client.listdir(waveform_directory)
+        assert len(event_folders) == c["number_of_events"], \
+            "Run should have resulted in '%s' events." % c["number_of_events"]
+
         self.expected_output_file = os.path.join(
             self.c["hpc_agere_project"], "__WAVEFORMS",
             "%s.tar" % self.inputs["hpc_agere_fwd_job_id"])
