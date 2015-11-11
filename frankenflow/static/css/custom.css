@@ -109,3 +109,11 @@ body {
 .jsonview ul .obj {
     margin: 0 0 0 1em;
 }
+
+.tip {
+    text-align: left;
+}
+
+.tooltip-inner {
+    max-width: 1000px;
+}

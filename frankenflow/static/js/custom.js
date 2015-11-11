@@ -22,6 +22,13 @@ function update_status_on_page(data) {
 };
 
 
+function get_status_tooltip() {
+    return "<div class='tip'>" +
+        current_message.replace(/(?:\r\n|\r|\n)/g, '<br />') +
+        "</div>";
+}
+
+
 function plot_graph() {
     var container = $("#graph_plot")[0];
     var options = {
@@ -129,6 +136,13 @@ function update_graph() {
 
 
 $(function() {
+    // Activate tooltips.
+    $("#status_tooltip").tooltip({
+        title: get_status_tooltip,
+        placement: "bottom",
+        html: true,
+        container: 'body'
+    });
 
     (function update_status() {
         $.ajax({
