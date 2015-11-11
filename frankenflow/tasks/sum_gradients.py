@@ -29,8 +29,12 @@ class SumGradients(task.Task):
         # Generate the gradient name here. It is not needed for this task
         # but for later ones and this is as good a place as any.
         s = self.inputs["model_name"].split("_")
-        self.gradient_name = "%s_%i_%s" % (s[0], int(s[1]) + 1,
-                                           "_".join(s[2:]))
+        if s[1].isdigit():
+            middle = str(int(s[1]) + 1)
+        else:
+            middle = s[1]
+        self.gradient_name = "%s_%s_%s" % (s[0], middle, "_".join(s[2:]))
+        self.gradient_name.replace("_model_", "_gradient_")
 
     def stage_data(self):
         pass

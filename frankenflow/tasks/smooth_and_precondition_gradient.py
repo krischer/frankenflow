@@ -23,7 +23,7 @@ class SmoothAndPreconditionGradient(task.Task):
 
         # Make sure this folder does not yet exist.
         assert not os.path.exists(self.output_directory), \
-            "Directory '%s' already exists."
+            "Directory '%s' already exists." % self.output_directory
 
 
     def stage_data(self):
@@ -36,7 +36,7 @@ class SmoothAndPreconditionGradient(task.Task):
         cmd = [self.context["config"]["agere_cmd"],
                "smooth_and_precondition_gradient",
                "--smoothing-iterations=%i" % self.c["smoothing_iterations"],
-               "--gradient_directory=%s" % self.output_directory,
+               "--output_directory=%s" % self.output_directory,
                self.inputs["projected_gradient_folder"]]
         returncode = self._run_external_script(cwd=".", cmd=cmd)
         assert returncode == 0, \
