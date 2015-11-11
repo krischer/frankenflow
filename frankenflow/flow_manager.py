@@ -36,8 +36,10 @@ class FlowManager():
                                                 "regular_grid_models"),
             "spec_elem_grid_models": os.path.join(output_folder,
                                                   "spec_elem_grid_models"),
-            "regular_grid_kernels": os.path.join(output_folder,
-                                                 "regular_grid_kernels"),
+            "regular_grid_gradients": os.path.join(output_folder,
+                                                   "regular_grid_gradients"),
+            "unsmoothed_spectral_element_grid_gradients": os.path.join(
+                output_folder, "unsmoothed_spectral_element_grid_gradients"),
             # Collect all the misfits in simple text files.
             "misfits": os.path.join(output_folder, "misfits")
         }

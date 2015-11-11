@@ -9,7 +9,7 @@ class SumGradients(task.Task):
     """
     @property
     def required_inputs(self):
-        return {"local_kernel_directory"}
+        return {"model_name", "local_kernel_directory"}
 
     def check_pre_staging(self):
         kernel_folder = os.listdir(self.inputs["local_kernel_directory"])
@@ -25,6 +25,12 @@ class SumGradients(task.Task):
         self.local_kernel_folders = [
             os.path.join(self.inputs["local_kernel_directory"], _i)
             for _i in kernel_folder]
+
+        # Generate the gradient name here. It is not needed for this task
+        # but for later ones and this is as good a place as any.
+        s = self.inputs["model_name"].split("_")
+        self.gradient_name = "%s_%i_%s" % (s[0], int(s[1]) + 1,
+                                           "_".join(s[2:]))
 
     def stage_data(self):
         pass
@@ -57,14 +63,16 @@ class SumGradients(task.Task):
             # Plot the unsmoothed spectral element kernels.
             {"task_type": "PlotSpectralElementGridGradient",
              "inputs": {
-                 "summed_kernel_directory": self.summed_kernel_directory
+                 "summed_kernel_directory": self.summed_kernel_directory,
+                 "gradient_name": self.gradient_name
              },
              "priority": 1
              },
             # And project the summed kernel to the regular grid.
             {"task_type": "ProjectGradient",
              "inputs": {
-                 "summed_kernel_directory": self.summed_kernel_directory
+                 "summed_kernel_directory": self.summed_kernel_directory,
+                 "gradient_name": self.gradient_name
              },
              "priority": 0
              }
