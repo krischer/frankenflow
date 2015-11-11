@@ -22,7 +22,8 @@ class TarWaveformsOnHPC(task.Task):
         # current SES3D version I have sometimes chooses not to simulate all
         # events.
         waveform_directory = os.path.join(
-            c["hpc_agere_project"], "__WAVEFORMS", self.hpc_agere_fwd_job_id)
+            c["hpc_agere_project"], "__WAVEFORMS",
+            self.inputs["hpc_agere_fwd_job_id"])
 
         event_folders = self.sftp_client.listdir(waveform_directory)
         assert len(event_folders) == c["number_of_events"], \

@@ -21,6 +21,17 @@ class CalculateMisfit(task.Task):
         pass
 
     def run(self):
+        # For a reason I don't understand sometimes not all caches are
+        # built. This is quick (at most a minute) as the cache generation
+        # script has been run before.
+        cmd = [self.c["lasif_cmd"], "build_all_caches", "--quick"]
+        returncode = self._run_external_script(
+            cwd=self.c["lasif_project"], cmd=cmd)
+
+        # Should be a good enough check.
+        assert returncode == 0, "Script return with code %i" % returncode
+
+
         cmd = ["mpirun", "-n", "4", self.c["lasif_cmd"],
                "compare_misfits","000_1_model", self.inputs["model_name"]]
 
@@ -63,7 +74,7 @@ class CalculateMisfit(task.Task):
             filename = os.path.join(misfit_folder, "iteration_%s.txt" % key)
 
             if os.path.exists(filename):
-                if key != "0":
+                if key != "000_1_model":
                     raise ValueError(
                         "Misfit for iteration %s already exists!" % key)
                 continue
