@@ -3,7 +3,7 @@ var info_last_accessed;
 
 var network;
 var graph;
-var graph_type = "normal";
+var graph_type = "clustered";
 
 var current_status;
 var current_message;
@@ -17,7 +17,6 @@ function update_status_on_page(data) {
 
         $("#status_status").text(current_status);
         $("#status_message").text(current_message);
-        update_graph();
     }
 };
 
@@ -146,7 +145,7 @@ $(function() {
 
     (function update_status() {
         $.ajax({
-            url: '/iterate',
+            url: '/status',
             success: function(data) {
                 $("#error_message").hide();
                 info_last_accessed = new Date();
