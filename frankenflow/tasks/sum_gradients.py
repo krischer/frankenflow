@@ -1,5 +1,4 @@
 import os
-import time
 
 from . import task
 
@@ -56,14 +55,14 @@ class SumGradients(task.Task):
     def generate_next_steps(self):
         next_steps = [
             # Plot the unsmoothed spectral element kernels.
-            {"task_type": "PlotSpectralElementKernels",
+            {"task_type": "PlotSpectralElementGridGradient",
              "inputs": {
                  "summed_kernel_directory": self.summed_kernel_directory
              },
              "priority": 1
              },
             # And project the summed kernel to the regular grid.
-            {"task_type": "ProjectKernel",
+            {"task_type": "ProjectGradient",
              "inputs": {
                  "summed_kernel_directory": self.summed_kernel_directory
              },
