@@ -1,3 +1,7 @@
+import os
+import shutil
+import struct
+
 from . import task
 
 
@@ -51,7 +55,102 @@ class Orchestrate(task.Task):
             raise NotImplementedError
 
     def gradient_goal(self, model):
-        raise NotImplementedError
+        # Initial model. We thus have to setup the optimization structure.
+        s_dir = self.context["seismopt_dir"]
+        if model == "000_1_model":
+            # The folder should not exist in the that case!
+            os.makedirs(s_dir, exist_ok=False)
+
+            # Copy the initial files.
+            d_dir = self.context["data_folder"]
+            shutil.copy2(os.path.join(d_dir, "seismopt/opt_settings.xml"),
+                         os.path.join(s_dir, "opt_settings.xml"))
+            shutil.copy2(os.path.join(d_dir, "seismopt/optlib.exe"),
+                         os.path.join(s_dir, "optlib.exe"))
+            shutil.copy2(os.path.join(d_dir, "seismopt/ses3d.cfg"),
+                         os.path.join(s_dir, "ses3d.cfg"))
+
+            self.copy_model_to_opt("ITERATION_000", "x", "000_1_model")
+            self.copy_gradient_to_opt("ITERATION_000", "x", "000_2_gradient")
+            self.write_misfit_to_opt("ITERATION_000", "x", "000_1_model")
+
+            self.next_steps = [{
+                "task_type": "RunSeismOpt",
+                "priority": 0
+            }]
+
+            self.new_goal = None
+        else:
+            raise NotImplementedError
+
+    def write_misfit_to_opt(self, iteration, prefix, model_name):
+        # Read the misfit.
+        misfit_file = os.path.join(
+            self.context["output_folders"]["misfits"],
+            "iteration_%s.txt" % model_name)
+        assert os.path.exists(misfit_file)
+
+        with open(misfit_file, "rt") as fh:
+            misfit = float(fh.readline())
+
+        output_file = os.path.join(
+            self.context["seismopt_dir"], iteration, "misfit_%s" % prefix)
+        with open(output_file, "wb") as fh:
+            fh.write(struct.pack("d", misfit))
+
+    def copy_model_to_opt(self, iteration, prefix, model_name):
+        src_folder = os.path.join(
+            self.context["optimization_dir"], model_name)
+        assert os.path.exists(src_folder)
+
+        expected_contents = {"x_rho", "x_vp", "x_vsh", "x_vsv"}
+        actual_contents = set(os.listdir(src_folder))
+
+        assert not expected_contents.difference(actual_contents)
+
+        dest_folder = os.path.join(self.context["seismopt_dir"],
+                                   iteration)
+        os.makedirs(dest_folder, exist_ok=True)
+
+        copy_map = {
+            "x_rho": prefix + "_rho",
+            "x_vp": prefix + "_vp",
+            "x_vsh": prefix + "_vsh",
+            "x_vsv": prefix + "_vsv",
+        }
+
+        for src, dest in copy_map.items():
+            shutil.copy2(
+                os.path.join(src_folder, src),
+                os.path.join(dest_folder, dest))
+
+    def copy_gradient_to_opt(self, iteration, prefix, gradient_name):
+        src_folder = os.path.join(
+            self.context["optimization_dir"], gradient_name)
+        assert os.path.exists(src_folder), "Folder '%s' does not exist." % (
+            src_folder)
+
+        expected_contents = {"gradient_x_rho", "gradient_x_vp",
+                             "gradient_x_vsh", "gradient_x_vsv"}
+        actual_contents = set(os.listdir(src_folder))
+
+        assert not expected_contents.difference(actual_contents)
+
+        dest_folder = os.path.join(self.context["seismopt_dir"],
+                                   iteration)
+        os.makedirs(dest_folder, exist_ok=True)
+
+        copy_map = {
+            "gradient_x_rho": "gradient_" + prefix + "_rho",
+            "gradient_x_vp": "gradient_" + prefix + "_vp",
+            "gradient_x_vsh": "gradient_" + prefix + "_vsh",
+            "gradient_x_vsv": "gradient_" + prefix + "_vsv",
+        }
+
+        for src, dest in copy_map.items():
+            shutil.copy2(
+                os.path.join(src_folder, src),
+                os.path.join(dest_folder, dest))
 
     def check_post_run(self):
         return {

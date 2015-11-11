@@ -28,6 +28,8 @@ class FlowManager():
                                              "__OPTIMIZATION")
         os.makedirs(self.optimization_dir, exist_ok=True)
 
+        self.seismopt_dir = os.path.join(self.base_folder, "seismopt")
+
         # Folders to collect the output.
         output_folder = os.path.join(self.base_folder, "__OUTPUT")
 
@@ -117,11 +119,7 @@ class FlowManager():
             self.create_initial_job()
 
 
-        assert self.status["current_goal"] is not None, \
-            "Cannot advance the flow without a goal!"
-
-        assert len(self.graph) != 0, "The graph has an id thus it must not " \
-                                     "be empty!"
+        assert len(self.graph) != 0, "The graph must not be empty!"
 
         try:
             job_id = self.graph.get_current_or_next_job()
@@ -291,7 +289,10 @@ class FlowManager():
             "input_files/setup": "SES3D INPUT/setup files",
             "block_x": "SES3D block_x file",
             "block_y": "SES3D block_y file",
-            "block_z": "SES3D block_z file"
+            "block_z": "SES3D block_z file",
+            "seismopt/opt_settings.xml": "Initial seismopt settings",
+            "seismopt/optlib.exe": "seismopt executable",
+            "seismopt/ses3d.cfg": "seismopt configuration"
         }
 
         for filename, description in required_files.items():
@@ -315,6 +316,7 @@ class FlowManager():
             "data_folder": self.data_folder,
             "working_dir": self.working_dir,
             "optimization_dir": self.optimization_dir,
+            "seismopt_dir": self.seismopt_dir,
             "data": self.data,
             "config": self.config.config,
             "output_folders": self.output_folders
