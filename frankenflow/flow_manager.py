@@ -314,6 +314,7 @@ class FlowManager():
             "base_folder": self.base_folder,
             "data_folder": self.data_folder,
             "working_dir": self.working_dir,
+            "optimization_dir": self.optimization_dir,
             "data": self.data,
             "config": self.config.config,
             "output_folders": self.output_folders

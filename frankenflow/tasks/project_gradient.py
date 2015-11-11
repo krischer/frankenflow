@@ -70,6 +70,7 @@ class ProjectGradient(task.Task):
             # Produce a plot of the projected model.
             {"task_type": "SmoothAndPreconditionGradient",
              "inputs": {
+                 "projected_gradient_folder": self.projected_gradient_folder
              },
              "priority": 0
             }
