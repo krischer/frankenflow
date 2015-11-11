@@ -36,7 +36,7 @@ class SmoothAndPreconditionGradient(task.Task):
         cmd = [self.context["config"]["agere_cmd"],
                "smooth_and_precondition_gradient",
                "--smoothing-iterations=%i" % self.c["smoothing_iterations"],
-               "--output_directory=%s" % self.output_directory,
+               "--gradient_directory=%s" % self.output_directory,
                self.inputs["projected_gradient_folder"]]
         returncode = self._run_external_script(cwd=".", cmd=cmd)
         assert returncode == 0, \
@@ -58,7 +58,7 @@ class SmoothAndPreconditionGradient(task.Task):
             {"task_type": "Orchestrate",
              "priority": 0
             },
-            {"task_type": "PlotRegularGridKernel",
+            {"task_type": "PlotRegularGridGradient",
              "priority": 1
              }
         ]
