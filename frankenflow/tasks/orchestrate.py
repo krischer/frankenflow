@@ -262,7 +262,17 @@ class Orchestrate(task.Task):
 
             self.new_goal = None
         else:
-            raise NotImplementedError
+            gradient = model.replace("_model_", "_gradient_")
+            contents = self.parse_current_seismopt_file()
+            self.copy_gradient_to_opt(contents["iteration"],
+                                      contents["prefix"],
+                                      gradient)
+            self.next_steps = [{
+                "task_type": "RunSeismOpt",
+                "priority": 0
+            }]
+
+            self.new_goal = None
 
     def write_misfit_to_opt(self, iteration, prefix, model_name):
         # Read the misfit.
@@ -315,7 +325,9 @@ class Orchestrate(task.Task):
                              "gradient_x_vsh", "gradient_x_vsv"}
         actual_contents = set(os.listdir(src_folder))
 
-        assert not expected_contents.difference(actual_contents)
+        assert not expected_contents.difference(actual_contents), \
+            "Expected: %s, Actual: %s" % (expected_contents,
+                                          actual_contents)
 
         dest_folder = os.path.join(self.context["seismopt_dir"],
                                    iteration)
