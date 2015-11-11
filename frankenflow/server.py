@@ -69,14 +69,17 @@ def graph():
     for node in json_graph["nodes"]:
       if node["_meta"]["job_status"] == "success":
         node["color"] = "green"
+        # Only color successful nodes.
+        if node["label"] in ("Start", "Orchestrate"):
+            node["color"] = "white"
+
       elif node["_meta"]["job_status"] == "failed":
         node["color"] = "red"
       elif node["_meta"]["job_status"] == "running":
         node["color"] = "yellow"
 
       if node["label"] in ("Start", "Orchestrate"):
-          node["color"] = "white"
-          node["shape"] = "box"
+        node["shape"] = "box"
 
 
     return flask.jsonify(json_graph)
