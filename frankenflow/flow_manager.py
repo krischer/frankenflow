@@ -1,203 +1,11 @@
 import copy
-import datetime
-import json
 import os
 import shutil
-import uuid
 
 from celery.result import AsyncResult
-import networkx as nx
-import networkx.readwrite.json_graph
 
-from . import celery_tasks, utils, tasks
-
-
-class NoJobsLeft(Exception):
-    pass
-
-
-class Config():
-    def __init__(self, filename):
-        self.__filename = filename
-
-        if not os.path.exists(filename):
-            self.config = {
-            }
-            self.serialize()
-        else:
-            self.deserialize()
-
-        self.assert_config()
-
-    def assert_config(self):
-        self._assert_config_file_exists("agere_cmd")
-        self._assert_config_file_exists("lasif_cmd")
-
-        self._assert_config_folder_exists("lasif_project")
-
-        # Variables to deal with the HPC remote host.
-        self._assert_var_exists("hpc_remote_host")
-        self._assert_var_exists("hpc_agere_project")
-        self._assert_var_exists("hpc_remote_input_files_directory")
-        self._assert_var_exists("hpc_agere_cmd")
-        # Folder to store the adjoint sources on the hpc.
-        self._assert_var_exists("hpc_adjoint_source_folder")
-
-        self._assert_var_exists("number_of_events", var_type=int)
-        self._assert_var_exists("forward_wavefield_storage_degree",
-                                var_type=int)
-        self._assert_var_exists("parallel_events", var_type=int)
-        self._assert_var_exists("pml_count", var_type=int)
-        self._assert_var_exists("walltime_per_event_forward", var_type=float)
-        self._assert_var_exists("walltime_per_event_adjoint", var_type=float)
-
-
-    def _assert_var_exists(self, key, var_type=None):
-        assert key in self.config, \
-            "'%s' must be given in the config file." % key
-        if var_type is not None:
-            assert isinstance(self.config[key], var_type), \
-                "Config variable '%s' not of type '%s'." % (key,
-                                                            var_type.__name__)
-
-    def _assert_config_file_exists(self, key):
-        self._assert_var_exists(key)
-
-        filename = self.config[key]
-        assert os.path.isfile(filename), \
-            "File '%s' for config value '%s' must exist." % (filename, key)
-
-    def _assert_config_folder_exists(self, key):
-        self._assert_var_exists(key)
-
-        filename = self.config[key]
-        assert os.path.isdir(filename), \
-            "Folder '%s' for config value '%s' must exist." % (filename, key)
-
-    def serialize(self):
-        with open(self.__filename, "wt") as fh:
-            json.dump(self.config, fh)
-
-    def deserialize(self):
-        with open(self.__filename, "rt") as fh:
-            self.config = json.load(fh)
-        self.assert_config()
-
-    def __getitem__(self, item):
-        return self.config[item]
-
-
-class FlowGraph():
-    def __init__(self, filename):
-        self.filename = filename
-        if os.path.exists(self.filename):
-            self.deserialize()
-        else:
-            self.graph = nx.DiGraph()
-
-    def serialize(self):
-        with open(self.filename, "wt") as fh:
-            json.dump(self.get_json(), fh)
-
-    def deserialize(self):
-        with open(self.filename, "rt") as fh:
-            self.graph = networkx.readwrite.json_graph.node_link_graph(
-                json.load(fh))
-
-    def get_json(self):
-        return networkx.readwrite.json_graph.node_link_data(self.graph)
-
-    def add_job(self, task_type, inputs, priority=0, from_node=None):
-        now = datetime.datetime.now()
-        graph_id = now.strftime("%y%m%dT%H%M%S_") + task_type + "_" + str(
-            uuid.uuid4())
-        self.graph.add_node(n=graph_id, attr_dict={
-            "task_type": task_type,
-            "inputs": inputs,
-            "priority": priority,
-            "job_status": "not started"
-        })
-
-        if from_node:
-            print("Adding edge from", from_node, "to", graph_id)
-            self.graph.add_edge(from_node, graph_id)
-
-        return graph_id, self[graph_id]
-
-    def get_current_or_next_job(self):
-        """
-        Get the current or next job.
-        """
-        # Find all jobs that have no outwards pointing edges.
-        out_nodes = [i for i in self.graph.nodes_iter() if
-                     self.graph.out_degree(i) == 0]
-        if not out_nodes:
-            raise NoJobsLeft
-
-        # Find the one that has status == running
-        running_nodes = [i for i in out_nodes
-                         if self.graph.node[i]["job_status"] == "running"]
-        assert len(running_nodes) <= 1, "Only one job can be active at any " \
-                                        "given time."
-        # One running node.
-        if running_nodes:
-            return running_nodes[0]
-
-        # Make sure non of the out_nodes has a success state.
-        out_nodes = [i for i in out_nodes
-                     if self.graph.node[i]["job_status"] != "success"]
-
-        # Now pick the job with the highest priority
-        out_nodes = sorted(out_nodes,
-                           key=lambda x: self.graph.node[x]["priority"],
-                           reverse=True)
-
-        if not out_nodes:
-            raise NoJobsLeft
-
-        return out_nodes[0]
-
-    def __getitem__(self, item):
-        return self.graph.node[item]
-
-    def __setitem__(self, item, value):
-        self.graph.node[item] = value
-
-    def __len__(self):
-        return len(self.graph)
-
-
-class FlowStatus(object):
-    """
-    Simple persistent status.
-
-    Like a dictionary just always stored on disc.
-    """
-    def __init__(self, filename):
-        self._filename = filename
-        self._deserialize()
-
-    def __getitem__(self, item):
-        if item not in self.__status:
-            return None
-        self._deserialize()
-        return self.__status[item]
-
-    def __setitem__(self, key, value):
-        self.__status[key] = value
-        self._serialize()
-
-    def _deserialize(self):
-        if not os.path.exists(self._filename):
-            self.__status = {}
-        else:
-            with open(self._filename, "rt") as fh:
-                self.__status = json.load(fh)
-        return self.__status
-
-    def _serialize(self):
-        with open(self._filename, "wt") as fh:
-            json.dump(self.__status, fh)
+from . import (celery_tasks, config, flow_graph, flow_status, utils, tasks,
+               NoJobsLeft)
 
 
 class FlowManager():
@@ -206,9 +14,10 @@ class FlowManager():
         self.base_folder = base_folder
 
         # Init status and config.
-        self.status = FlowStatus(os.path.join(self.base_folder, "status.json"))
-        self.config = Config(os.path.join(self.base_folder,
-                                          "config.json"))
+        self.status = flow_status.FlowStatus(os.path.join(self.base_folder,
+                                                          "status.json"))
+        self.config = config.Config(os.path.join(self.base_folder,
+                                                 "config.json"))
 
         # Working directory for all the jobs.
         self.working_dir = os.path.join(self.base_folder, "__JOBS")
@@ -238,7 +47,7 @@ class FlowManager():
 
         self.__check_data_files()
 
-        self.graph = FlowGraph(
+        self.graph = flow_graph.FlowGraph(
             filename=os.path.join(self.base_folder, "graph.json"))
 
     @property

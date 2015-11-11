@@ -18,3 +18,7 @@ def update_sent_state(sender=None, body=None, **kwargs):
     backend = task.backend if task else celery.backend
 
     backend.store_result(body['id'], None, "SENT")
+
+
+class NoJobsLeft(Exception):
+    pass
