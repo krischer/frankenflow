@@ -13,17 +13,17 @@ class PlotSpectralElementGridGradient(task.Task):
 
     @property
     def required_inputs(self):
-        return {"model_name", "gradient_name", "summed_kernel_directory"}
+        return {"model_name", "gradient_name", "summed_gradient_directory"}
 
     def check_pre_staging(self):
-        assert os.path.exists(self.inputs["summed_kernel_directory"]), \
-            "'%s' does not exist" %  self.inputs["summed_kernel_directory"]
+        assert os.path.exists(self.inputs["summed_gradient_directory"]), \
+            "'%s' does not exist" %  self.inputs["summed_gradient_directory"]
 
         # boxfile from corresponding model
         self.boxfile = os.path.join(self.c["lasif_project"], "MODELS",
                                     self.inputs["model_name"], "boxfile")
         self.gradient_boxfile = os.path.join(
-            self.inputs["summed_kernel_directory"], "boxfile")
+            self.inputs["summed_gradient_directory"], "boxfile")
 
         assert os.path.exists(self.boxfile), "File '%s' must exist." % \
             self.boxfile
@@ -39,7 +39,7 @@ class PlotSpectralElementGridGradient(task.Task):
 
     def run(self):
         self.filenames = []
-        variables = ["rho", "csv", "csh", "cp"]
+        variables = ["grad_rho", "grad_csv", "grad_csh", "grad_cp"]
         for variable in variables:
             filename = "%s_%s_100km_depth.jpg" % (
                 self.inputs["gradient_name"], variable)
@@ -48,7 +48,7 @@ class PlotSpectralElementGridGradient(task.Task):
             cmd = [
                 self.context["config"]["lasif_cmd"],
                 "plot_kernel",
-                self.inputs["summed_kernel_directory"],
+                self.inputs["summed_gradient_directory"],
                 "100",
                 variable,
                 filename]
