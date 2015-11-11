@@ -36,6 +36,7 @@ class Config():
         self._assert_var_exists("pml_count", var_type=int)
         self._assert_var_exists("walltime_per_event_forward", var_type=float)
         self._assert_var_exists("walltime_per_event_adjoint", var_type=float)
+        self._assert_var_exists("smoothing_iterations", var_type=int)
 
 
     def _assert_var_exists(self, key, var_type=None):
