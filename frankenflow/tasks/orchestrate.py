@@ -53,8 +53,7 @@ class Orchestrate(task.Task):
             "'%s' does not exist." % seismopt_next_file
         return seismopt_next_file
 
-    def steer_with_seismopt(self):
-        self.store_opt_next_file()
+    def parse_current_seismopt_file(self):
         with open(self.seismopt_next, "rt") as fh:
             line_1 = fh.readline().strip()
             line_2 = fh.readline().strip()
@@ -68,30 +67,49 @@ class Orchestrate(task.Task):
 
         assert prog == "run_ses3d"
 
+        contents = {
+            "task": task,
+            "iteration": os.path.normpath(iteration),
+            "prefix": prefix,
+            "folder": folder,
+            "number": number
+        }
+
         if task == "misfit":
             # If the misfit is requested, the desired step length has to be
             # given.
             assert "test step length" in line_1
             # Step length
             step_length = float(line_1.split()[-1])
-            # Make sure all the model files exist.
-            model_file_map = {
-                prefix + "_rho": "x_rho",
-                prefix + "_vp": "x_vp",
-                prefix + "_vsh": "x_vsh",
-                prefix + "_vsv": "x_vsv"}
+            contents["step_length"] = step_length
 
             model_name = "%s_x_model_steplength_%g" % (number, step_length)
+            contents["model_name"] = model_name
+
+        return contents
+
+    def steer_with_seismopt(self):
+        self.store_opt_next_file()
+
+        contents = self.parse_current_seismopt_file()
+
+        if contents["task"] == "misfit":
+            # Make sure all the model files exist.
+            model_file_map = {
+                contents["prefix"] + "_rho": "x_rho",
+                contents["prefix"] + "_vp": "x_vp",
+                contents["prefix"] + "_vsh": "x_vsh",
+                contents["prefix"] + "_vsv": "x_vsv"}
 
             # The target, a.k.a model folder.
             target_folder = os.path.join(self.context["optimization_dir"],
-                                         model_name)
+                                         contents["model_name"])
             assert not os.path.exists(target_folder), \
                 "Folder '%s' already exists." % target_folder
 
             # Make sure all models files exist.
             for filename in model_file_map.keys():
-                filename = os.path.join(folder, filename)
+                filename = os.path.join(contents["folder"], filename)
                 assert os.path.exists(filename), "'%s' does not exist." % \
                     filename
 
@@ -100,11 +118,11 @@ class Orchestrate(task.Task):
             os.makedirs(target_folder)
 
             for src, target in model_file_map.items():
-                src = os.path.join(folder, src)
+                src = os.path.join(contents["folder"], src)
                 target = os.path.join(target_folder, target)
                 shutil.copy2(src, target)
 
-            self.new_goal = "misfit %s" % model_name
+            self.new_goal = "misfit %s" % contents["model_name"]
             self.next_steps = [
                 {"task_type": "ProjectModel",
                  "inputs": {"regular_model_folder": target_folder},
@@ -117,11 +135,23 @@ class Orchestrate(task.Task):
                 }
             ]
             return
+        if contents["task"] == "gradient":
+            # Make sure the forward run is part of the inputs.
+            self._assert_input_exists("hpc_agere_fwd_job_id")
+            self._assert_input_exists("model_name")
+
+            self.next_steps = [{
+                "task_type": "CalculateAdjointSources",
+                "inputs": {
+                    "model_name": self.inputs["model_name"],
+                    "hpc_agere_fwd_job_id": self.inputs["hpc_agere_fwd_job_id"]
+                },
+                "priority": 0
+            }]
+            self.new_goal = "gradient %s" % self.inputs["model_name"]
 
         else:
             raise NotImplementedError
-
-
 
     def store_opt_next_file(self):
         """
@@ -151,7 +181,59 @@ class Orchestrate(task.Task):
             }]
             self.new_goal = "gradient %s" % model
         else:
-            raise NotImplementedError
+            # Make sure the forward run is part of the inputs as it has to
+            # passed on to the potential adjoint simulation.
+            self._assert_input_exists("hpc_agere_fwd_job_id")
+
+            # Make sure the opt.next file did not change.
+            existing_ones = os.listdir(
+                self.context["output_folders"]["seismopt_next_files"])
+            # They are sorted by datetime, thus the last one is the latest one.
+            latest_one = os.path.join(
+                self.context["output_folders"]["seismopt_next_files"],
+                sorted(existing_ones)[-1])
+            current_one = self.seismopt_next
+
+            with open(latest_one, "rt") as fh:
+                latest_one = fh.read()
+
+            with open(current_one, "rt") as fh:
+                current_one = fh.read()
+
+            assert latest_one == current_one, \
+                "The latest archived opt.next file is not identical with " \
+                "the current one. Thus it cannot be guaranteed that the " \
+                "goal is still valid."
+
+            contents = self.parse_current_seismopt_file()
+
+            iteration, _, *name = model.split("_")
+            name = "_".join(name)
+            iteration = "ITERATION_%s" % iteration
+
+            # Make sure the iteration is consistent.
+            assert iteration == contents["iteration"], "'%s' != '%s'" % (
+                iteration, contents["iteration"])
+
+            # Also the model name.
+            assert model == contents["model_name"]
+
+            # Assume its still valid. Write the misfit and run seimopt.
+            self.write_misfit_to_opt(iteration, contents["prefix"], model)
+
+            self.next_steps = [{
+                "task_type": "RunSeismOpt",
+                "inputs": {
+                    "hpc_agere_fwd_job_id": self.inputs[
+                        "hpc_agere_fwd_job_id"],
+                    "model_name": model
+                },
+                "priority": 0
+            }]
+
+            self.new_goal = None
+
+            return
 
     def gradient_goal(self, model):
         # Initial model. We thus have to setup the optimization structure.

@@ -37,8 +37,9 @@ class RunSeismOpt(task.Task):
         pass
 
     def generate_next_steps(self):
+        # It will pass on all inputs to the next stage.
         return [
-            {"task_type": "Orchestration",
+            {"task_type": "Orchestrate",
              "priority": 0
             }
         ]
