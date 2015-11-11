@@ -1,4 +1,6 @@
+import datetime
 import os
+import re
 import shutil
 import struct
 
@@ -28,13 +30,110 @@ class Orchestrate(task.Task):
         pass
 
     def run(self):
+        # If no current goal is set, evaluate the result of seismopt and act
+        # accordingly.
+        if self.current_goal is None:
+            self.steer_with_seismopt()
+            return
+
         goal_type, model = self.current_goal.split()
+
         if goal_type == "misfit":
             self.misfit_goal(model)
         elif goal_type == "gradient":
             self.gradient_goal(model)
         else:
             raise NotImplementedError
+
+    @property
+    def seismopt_next(self):
+        seismopt_next_file = os.path.join(
+            self.context["seismopt_dir"], "opt.next")
+        assert os.path.exists(seismopt_next_file), \
+            "'%s' does not exist." % seismopt_next_file
+        return seismopt_next_file
+
+    def steer_with_seismopt(self):
+        self.store_opt_next_file()
+        with open(self.seismopt_next, "rt") as fh:
+            line_1 = fh.readline().strip()
+            line_2 = fh.readline().strip()
+
+        prog, task, iteration, prefix = line_2.split()
+
+        # Folder with all the things.
+        folder = os.path.normpath(os.path.join(self.context["seismopt_dir"],
+                                               iteration))
+        number = re.findall("\d+", iteration)[0]
+
+        assert prog == "run_ses3d"
+
+        if task == "misfit":
+            # If the misfit is requested, the desired step length has to be
+            # given.
+            assert "test step length" in line_1
+            # Step length
+            step_length = float(line_1.split()[-1])
+            # Make sure all the model files exist.
+            model_file_map = {
+                prefix + "_rho": "x_rho",
+                prefix + "_vp": "x_vp",
+                prefix + "_vsh": "x_vsh",
+                prefix + "_vsv": "x_vsv"}
+
+            model_name = "%s_x_model_steplength_%g" % (number, step_length)
+
+            # The target, a.k.a model folder.
+            target_folder = os.path.join(self.context["optimization_dir"],
+                                         model_name)
+            assert not os.path.exists(target_folder), \
+                "Folder '%s' already exists." % target_folder
+
+            # Make sure all models files exist.
+            for filename in model_file_map.keys():
+                filename = os.path.join(folder, filename)
+                assert os.path.exists(filename), "'%s' does not exist." % \
+                    filename
+
+            # Good to go. Copy model, set new goal, and next steps and off
+            # we go!
+            os.makedirs(target_folder)
+
+            for src, target in model_file_map.items():
+                src = os.path.join(folder, src)
+                target = os.path.join(target_folder, target)
+                shutil.copy2(src, target)
+
+            self.new_goal = "misfit %s" % model_name
+            self.next_steps = [
+                {"task_type": "ProjectModel",
+                 "inputs": {"regular_model_folder": target_folder},
+                 "priority": 0
+                },
+                # Add a job to plot the starting model at a higher priority.
+                {"task_type": "PlotRegularGridModel",
+                 "inputs": {"regular_model_folder": target_folder},
+                 "priority": 1,
+                }
+            ]
+            return
+
+        else:
+            raise NotImplementedError
+
+
+
+    def store_opt_next_file(self):
+        """
+        Store the current opt.next file to keep track of what is happening.
+        """
+        now = datetime.datetime.now()
+        filename = now.strftime("%y%m%dT%H%M%S_") + "opt.next"
+
+        target = os.path.join(
+            self.context["output_folders"]["seismopt_next_files"], filename)
+
+        shutil.copy2(self.seismopt_next, target)
 
     def misfit_goal(self, model):
         # Initial model. Now we also need the gradient. The first step here

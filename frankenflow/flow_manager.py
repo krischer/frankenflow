@@ -43,7 +43,10 @@ class FlowManager():
             "unsmoothed_spectral_element_grid_gradients": os.path.join(
                 output_folder, "unsmoothed_spectral_element_grid_gradients"),
             # Collect all the misfits in simple text files.
-            "misfits": os.path.join(output_folder, "misfits")
+            "misfits": os.path.join(output_folder, "misfits"),
+            # Store all the seismopt next files.
+            "seismopt_next_files": os.path.join(output_folder,
+                                                "seismopt_next_files")
         }
 
         for folder in self.output_folders.values():
