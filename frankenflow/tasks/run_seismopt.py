@@ -19,14 +19,14 @@ class RunSeismOpt(task.Task):
                                        "optlib.exe")
         assert os.path.exists(self.executable)
 
+        # Store the contents of the opt.next file before the run.
         self.next_file = os.path.join(self.context["seismopt_dir"],
                                       "opt.next")
         if os.path.exists(self.next_file):
             with open(self.next_file, "rt") as fh:
-                fh.readline()
-                self.line_2 = fh.readline().strip()
+                self.contents = fh.read()
         else:
-            self.line_2 = None
+            self.contents = None
 
     def stage_data(self):
         pass
@@ -47,11 +47,11 @@ class RunSeismOpt(task.Task):
 
     def generate_next_steps(self):
         with open(self.next_file, "rt") as fh:
-            fh.readline()
-            line_2 = fh.readline().strip()
+            contents = fh.read()
 
-        # If nothing changed, run again!
-        if line_2 == self.line_2:
+        # If nothing changed, run again! This might end up in a loop but
+        # should not be too bad and it is easy to notice!
+        if contents == self.contents:
             return [
                 {"task_type": "RunSeismOpt",
                  "priority": 0}
