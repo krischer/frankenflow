@@ -1,6 +1,7 @@
 import os
 
 from . import task
+from .. import push_notifications
 
 
 class CalculateMisfit(task.Task):
@@ -81,6 +82,12 @@ class CalculateMisfit(task.Task):
 
             with open(filename, "wt") as fh:
                 fh.write("%g" % value)
+
+
+            # Send a push notification!
+            push_notifications.send_notification(
+                title="New Misfit!",
+                message="Misfit for model %s: %g" % (key, value))
 
     def generate_next_steps(self):
         # This not requires an orchestration to figure out what to do next.
