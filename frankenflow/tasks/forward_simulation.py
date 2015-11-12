@@ -2,6 +2,7 @@ import os
 import time
 
 from . import task
+from .. import push_notifications
 
 
 class ForwardSimulation(task.Task):
@@ -91,6 +92,12 @@ class ForwardSimulation(task.Task):
             raise ValueError("Could not find run number on stdout: %s" %
                              stdout)
 
+        # Send a push notification.
+        push_notifications.send_notification(
+            title="Launched Forward Simulation!",
+            message="Forward simulation for model %s" %
+                self.inputs["model_name"])
+
         # Check if job is done all five minutes.
         while True:
             time.sleep(20)
@@ -114,6 +121,13 @@ class ForwardSimulation(task.Task):
 
                 if status == "FINISHED":
                     finished = True
+
+                # Send a push notification.
+                push_notifications.send_notification(
+                    title="Finished Forward Simulation!",
+                    message="Done with forward simulation for model %s" %
+                            self.inputs["model_name"])
+
                 break
             else:
                 raise ValueError("`agere_status` did not contain run '%s'" %

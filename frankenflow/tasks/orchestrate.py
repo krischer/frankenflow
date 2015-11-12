@@ -5,6 +5,7 @@ import shutil
 import struct
 
 from . import task
+from .. import push_notifications
 
 
 class Orchestrate(task.Task):
@@ -288,6 +289,11 @@ class Orchestrate(task.Task):
             self.context["seismopt_dir"], iteration, "misfit_%s" % prefix)
         with open(output_file, "wb") as fh:
             fh.write(struct.pack("d", misfit))
+
+        # Send a push notification!
+        push_notifications.send_notification(
+            title="New Misfit!",
+            message="Misfit for model %s: %g" % (model_name, misfit))
 
     def copy_model_to_opt(self, iteration, prefix, model_name):
         src_folder = os.path.join(

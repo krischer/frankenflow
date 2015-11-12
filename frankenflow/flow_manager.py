@@ -5,7 +5,7 @@ import shutil
 from celery.result import AsyncResult
 
 from . import (celery_tasks, config, flow_graph, flow_status, utils, tasks,
-               NoJobsLeft)
+               NoJobsLeft, push_notifications)
 
 
 class FlowManager():
@@ -116,6 +116,10 @@ class FlowManager():
             self.status["current_message"] = tb
             self.status["current_status"] = "ERROR"
 
+            push_notifications.send_notification(
+                title="Workflow encountered error.",
+                message="Problem with main iterate function: %s" % tb)
+
     def _iterate(self):
         # If there is no job, create one!
         if len(self.graph) == 0:
@@ -129,6 +133,11 @@ class FlowManager():
         except NoJobsLeft:
             self.status["current_status"] = "DONE"
             self.status["current_message"] = "No jobs left"
+
+            push_notifications.send_notification(
+                title="Workflow done.",
+                message="No more jobs left")
+
             return
         self.advance_job(job_id)
 
@@ -186,6 +195,9 @@ class FlowManager():
                     self.status["current_message"] = \
                         "Job '%s' failed at stage '%s' due to: '%s'" % (
                             job_id, fs, return_value[fs]["fail_reason"])
+                    push_notifications.send_notification(
+                        title="Workflow encountered error.",
+                        message="Job exited with status 'failed'.")
                 else:
                     job["job_status"] = return_value["status"]
                     self.status["current_status"] = "????"

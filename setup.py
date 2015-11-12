@@ -8,6 +8,7 @@ setup(
         "paramiko",
         "celery",
         "networkx",
-        "flask"
+        "flask",
+        "requests"
     ]
 )

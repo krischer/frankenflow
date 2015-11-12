@@ -3,6 +3,7 @@ import re
 import time
 
 from . import task
+from .. import push_notifications
 
 
 class AdjointSimulation(task.Task):
@@ -82,6 +83,12 @@ class AdjointSimulation(task.Task):
             raise ValueError("Could not find 'Launching SES3D' on stdout: %s"
                              % stdout)
 
+        # Send a push notification.
+        push_notifications.send_notification(
+            title="Launched Adjoint Simulation!",
+            message="Adjoint simulation for model %s" %
+                    self.inputs["model_name"])
+
         # Check if job is done all five minutes.
         while True:
             time.sleep(20)
@@ -105,6 +112,13 @@ class AdjointSimulation(task.Task):
 
                 if status == "FINISHED":
                     finished = True
+
+                # Send a push notification.
+                push_notifications.send_notification(
+                    title="Finished Adjoint Simulation!",
+                    message="Done with adjoint simulation for model %s" %
+                            self.inputs["model_name"])
+
                 break
             else:
                 raise ValueError("`agere_status` did not contain run '%s'" %
