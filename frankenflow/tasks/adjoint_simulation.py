@@ -89,9 +89,9 @@ class AdjointSimulation(task.Task):
             message="Adjoint simulation for model %s" %
                     self.inputs["model_name"])
 
-        # Check if job is done all five minutes.
+        # Check if job is done all two minutes.
         while True:
-            time.sleep(20)
+            time.sleep(120)
 
             stdout, stderr = self._run_ssh_command(
                 "%s status" % self.c["hpc_agere_cmd"])
