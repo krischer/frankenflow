@@ -34,7 +34,7 @@ class SumGradients(task.Task):
         else:
             middle = s[1]
         self.gradient_name = "%s_%s_%s" % (s[0], middle, "_".join(s[2:]))
-        self.gradient_name.replace("_model_", "_gradient_")
+        self.gradient_name.replace("_model", "_gradient")
 
     def stage_data(self):
         pass
