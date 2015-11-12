@@ -121,13 +121,6 @@ class ForwardSimulation(task.Task):
 
                 if status == "FINISHED":
                     finished = True
-
-                # Send a push notification.
-                push_notifications.send_notification(
-                    title="Finished Forward Simulation!",
-                    message="Done with forward simulation for model %s" %
-                            self.inputs["model_name"])
-
                 break
             else:
                 raise ValueError("`agere_status` did not contain run '%s'" %
@@ -136,6 +129,11 @@ class ForwardSimulation(task.Task):
             if not finished:
                 continue
             else:
+                # Send a push notification.
+                push_notifications.send_notification(
+                    title="Finished Forward Simulation!",
+                    message="Done with forward simulation for model %s" %
+                            self.inputs["model_name"])
                 break
 
     def check_post_run(self):
