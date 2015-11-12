@@ -127,7 +127,9 @@ class Task(metaclass=abc.ABCMeta):
         # Should be safe enough in our controlled environment.
         self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.ssh_client.load_system_host_keys()
-        self.ssh_client.connect(**info)
+        self.ssh_client.connect(
+            username=info["username"],
+            hostname=info["hostname"])
 
         self.sftp_client = self.ssh_client.open_sftp()
 
