@@ -8,7 +8,6 @@ setup(
         "paramiko",
         "celery",
         "networkx",
-        "flask",
-        "pillow"
+        "flask"
     ]
 )
