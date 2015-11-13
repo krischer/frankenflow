@@ -1,4 +1,3 @@
-import collections
 import glob
 import os
 import re
@@ -43,7 +42,7 @@ def misfits():
     misfit_folder = app.flow_manager.info["output_folders"]["misfits"]
     files = glob.glob(os.path.join(misfit_folder, "iteration_*.txt"))
 
-    contents = collections.OrderedDict()
+    misfits = []
 
     for filename in files:
         name = re.sub(r"^iteration_", "", os.path.basename(filename))
@@ -51,9 +50,9 @@ def misfits():
         with open(filename, "rt") as fh:
             misfit = float(fh.read())
 
-        contents[name] = misfit
+        misfits.append({"model_name": name, "misfit": misfit})
 
-    return flask.jsonify(contents)
+    return flask.jsonify({"misfits": misfits})
 
 
 @app.route("/reset/<job_id>")

@@ -186,6 +186,28 @@ $('#toggle_graph_button').on('click', function() {
 });
 
 
+$('#misfit_evolution_button').on('click', function() {
+    $.ajax({
+        url: '/misfits',
+        success: function(data) {
+
+            $("#misfit-table").empty().append(function() {
+                var output = "<tr><th>Model Name</th><th>Misfit</th></tr>";
+                _.forEach(data.misfits, function(n) {
+                    output += "<tr><td>" + n.model_name +
+                        "</td><td>" + n.misfit + "</td></tr>";
+                });
+                return output
+            });
+
+
+            $('#misfit-modal').modal('show');
+            console.log(data);
+        }
+    });
+});
+
+
 $('#reset_job_button').on('click', function() {
     var selected_node = $("#job_selector").find(":selected").text();
     $.ajax({

@@ -50,6 +50,39 @@
     </div>
 </div>
 
+
+<!--Modal showing the misfit evolution.-->
+<div class="modal fade" id="misfit-modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close"><span
+                        aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Misfit Evolution</h4>
+            </div>
+            <div class="modal-body">
+                <table class="table table-condensed" id="misfit-table">
+                    <tr>
+                        <td>John</td>
+                        <td>Doe</td>
+                    </tr>
+                    <tr>
+                        <td>Jane</td>
+                        <td>Doe</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default"
+                        data-dismiss="modal">Ok
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <!--Navigation bar-->
 <nav class="navbar navbar-inverse navbar-static-top" role="navigation">
     <div class="container-fluid">
@@ -62,6 +95,7 @@
         </div>
     </div>
 </nav>
+
 
 <!--Content-->
 <div class="container-fluid" id="main-container">
@@ -78,6 +112,10 @@
             <button type="button" id="toggle_graph_button"
                     class="btn btn-xs btn-info">
                 Toggle Graph
+            </button>
+            <button type="button" id="misfit_evolution_button"
+                    class="btn btn-xs btn-default">
+                Show Misfits
             </button>
             <div class="pull-right">
                 <button type="button"
