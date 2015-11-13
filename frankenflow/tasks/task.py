@@ -120,6 +120,15 @@ class Task(metaclass=abc.ABCMeta):
     def remote_listdir(self, path):
         return self.sftp_client.listdir(path=path)
 
+    @retry(5)
+    def remote_put(self, localpath, remotepath):
+        return self.sftp_client.put(localpath=localpath,
+                                    remotepath=remotepath)
+    @retry(5)
+    def remote_get(self, remotepath, localpath):
+        return self.sftp_client.get(remotepath=remotepath,
+                                    localpath=localpath)
+
     def get_events(self):
         events = glob.glob(os.path.join(self.c["lasif_project"], "EVENTS",
                                         "*.xml"))

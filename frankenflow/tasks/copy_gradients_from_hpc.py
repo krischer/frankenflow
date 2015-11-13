@@ -25,7 +25,7 @@ class CopyGradientsFromHPC(task.Task):
             self.working_dir, "KERNELS")
 
         # Make sure the kernels exist on the HPC.
-        kernel_folder = self.sftp_client.listdir(self.hpc_kernel_directory)
+        kernel_folder = self.remote_listdir(self.hpc_kernel_directory)
         assert len(kernel_folder) == c["number_of_events"], \
             "Run should have resulted in '%s' kernels." % c["number_of_events"]
 

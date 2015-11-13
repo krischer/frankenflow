@@ -24,7 +24,7 @@ class AdjointSimulation(task.Task):
             "__MODELS")
 
         # Make sure the model directory exists.
-        existing_models = self.sftp_client.listdir(self.remote_model_directory)
+        existing_models = self.remote_listdir(self.remote_model_directory)
         assert self.inputs["model_name"] in existing_models, (
             "Model '%s' does not exist on the HPC" % (
                 self.inputs["model_name"]))
@@ -38,7 +38,7 @@ class AdjointSimulation(task.Task):
             self.hpc_agere_bwd_job_id)
 
         try:
-            self.sftp_client.listdir(self.hpc_kernel_directory)
+            self.remote_listdir(self.hpc_kernel_directory)
         except FileNotFoundError:
             pass
         else:
@@ -129,7 +129,7 @@ class AdjointSimulation(task.Task):
 
     def check_post_run(self):
         # Make sure some kernels have been created.
-        kernel_folder = self.sftp_client.listdir(self.hpc_kernel_directory)
+        kernel_folder = self.remote_listdir(self.hpc_kernel_directory)
         assert len(kernel_folder), "Run should have resulted in some kernels."
 
     def generate_next_steps(self):

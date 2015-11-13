@@ -20,7 +20,7 @@ class CopyWaveformsFromHPC(task.Task):
             os.path.basename(self.inputs["remote_waveform_tar_file"]))
 
         # Make sure the tar file exists.
-        files = self.sftp_client.listdir(
+        files = self.remote_listdir(
             os.path.dirname(self.inputs["remote_waveform_tar_file"]))
         assert os.path.basename(self.inputs["remote_waveform_tar_file"]) in \
                files, "Remote file '%s' does not exists." % (
@@ -37,8 +37,8 @@ class CopyWaveformsFromHPC(task.Task):
         pass
 
     def run(self):
-        self.sftp_client.get(self.inputs["remote_waveform_tar_file"],
-                             self.target_file)
+        self.remote_get(self.inputs["remote_waveform_tar_file"],
+                        self.target_file)
 
     def check_post_run(self):
         # Make sure it exists now.

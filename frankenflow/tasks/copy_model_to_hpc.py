@@ -35,7 +35,7 @@ class CopyModelToHPC(task.Task):
             "__MODELS")
 
         # Make sure this directory exists but does not have the model yet.
-        existing_models = self.sftp_client.listdir(self.remote_model_directory)
+        existing_models = self.remote_listdir(self.remote_model_directory)
         assert self.inputs["model_name"] not in existing_models, (
             "Model '%s' already exists in %s:%s" % (
                 self.inputs["model_name"],
@@ -45,10 +45,10 @@ class CopyModelToHPC(task.Task):
         self.remote_target_directory = os.path.join(
             self.remote_model_directory, self.inputs["model_name"])
 
-        self.sftp_client.mkdir(self.remote_target_directory)
+        self.remote_mkdir(self.remote_target_directory)
 
         # Make sure this worked.
-        existing_models = self.sftp_client.listdir(self.remote_model_directory)
+        existing_models = self.remote_listdir(self.remote_model_directory)
         assert self.inputs["model_name"] in existing_models, (
             "Creating folder %s:%s failed." % (
                 self.context["config"]["hpc_remote_host"],
@@ -65,12 +65,12 @@ class CopyModelToHPC(task.Task):
         for filename in self.input_files:
             src = os.path.join(self.model_folder, filename)
             target = os.path.join(self.remote_target_directory, filename)
-            self.sftp_client.put(src, target)
+            self.remote_put(src, target)
 
     def check_post_run(self):
         # Make sure all files have been copied.
         remote_files = set(
-            self.sftp_client.listdir(self.remote_target_directory))
+            self.remote_listdir(self.remote_target_directory))
 
         local_files = set(self.input_files)
 

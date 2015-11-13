@@ -25,7 +25,7 @@ class TarWaveformsOnHPC(task.Task):
             c["hpc_agere_project"], "__WAVEFORMS",
             self.inputs["hpc_agere_fwd_job_id"])
 
-        event_folders = self.sftp_client.listdir(waveform_directory)
+        event_folders = self.remote_listdir(waveform_directory)
         assert len(event_folders) == c["number_of_events"], \
             "Run should have resulted in '%s' events." % c["number_of_events"]
 
@@ -34,7 +34,7 @@ class TarWaveformsOnHPC(task.Task):
             "%s.tar" % self.inputs["hpc_agere_fwd_job_id"])
 
         # Make sure it does not yet exist.
-        files = self.sftp_client.listdir(
+        files = self.remote_listdir(
             os.path.dirname(self.expected_output_file))
         assert os.path.basename(self.expected_output_file) not in files, \
             "File '%s' already exists." % (self.expected_output_file)
@@ -70,7 +70,7 @@ class TarWaveformsOnHPC(task.Task):
 
     def check_post_run(self):
         # Make sure the file exists now.
-        files = self.sftp_client.listdir(
+        files = self.remote_listdir(
             os.path.dirname(self.expected_output_file))
         assert os.path.basename(self.expected_output_file) in files, \
             "File '%s' has not been created." % (self.expected_output_file)

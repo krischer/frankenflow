@@ -26,7 +26,7 @@ class ForwardSimulation(task.Task):
         # Make sure the directory exists and the amount of input files is
         # equal to number of events defined in the config file.
         try:
-            input_files = self.sftp_client.listdir(
+            input_files = self.remote_listdir(
                 self.remote_input_file_directory)
         except FileNotFoundError:
             raise FileNotFoundError("Remote input file directory does not "
@@ -43,7 +43,7 @@ class ForwardSimulation(task.Task):
             "__MODELS")
 
         # Make sure the model directory exists.
-        existing_models = self.sftp_client.listdir(self.remote_model_directory)
+        existing_models = self.remote_listdir(self.remote_model_directory)
         assert self.inputs["model_name"] in existing_models, (
             "Model '%s' does not exist on the HPC" % (
                 self.inputs["model_name"]))
@@ -145,7 +145,7 @@ class ForwardSimulation(task.Task):
         self.output_directory = os.path.join(
             c["hpc_agere_project"], "__WAVEFORMS", self.hpc_agere_fwd_job_id)
 
-        event_folders = self.sftp_client.listdir(self.output_directory)
+        event_folders = self.remote_listdir(self.output_directory)
         assert len(event_folders), "Run should have resulted in some events."
 
     def generate_next_steps(self):
