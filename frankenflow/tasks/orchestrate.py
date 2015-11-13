@@ -40,7 +40,7 @@ class Orchestrate(task.Task):
 
         if goal_type == "misfit":
             self.misfit_goal(model)
-        elif goal_type == "gradient":
+        elif goal_type in ("gradient", "misfit_and_gradient"):
             self.gradient_goal(model)
         else:
             raise NotImplementedError
@@ -86,14 +86,31 @@ class Orchestrate(task.Task):
             model_name = "%s_x_model_steplength_%g" % (number, step_length)
             contents["model_name"] = model_name
 
+        elif task == "misfit_and_gradient":
+            # If the misfit is requested, the desired step length has to be
+            # given.
+            assert "test step length" in line_1
+            # Step length
+            step_length = float(line_1.split()[-1])
+            contents["step_length"] = step_length
+
+            model_name = "%s_x_model_steplength_%g" % (number, step_length)
+            contents["model_name"] = model_name
+
         return contents
 
     def steer_with_seismopt(self):
+        """
+        This function is only called when no current goal is set.
+        """
         self.store_opt_next_file()
 
         contents = self.parse_current_seismopt_file()
 
-        if contents["task"] == "misfit":
+        task = contents["task"]
+
+        # In both cases the next step is to calculate the misfit.
+        if task in ("misfit", "misfit_and_gradient"):
             # Make sure all the model files exist.
             model_file_map = {
                 contents["prefix"] + "_rho": "x_rho",
@@ -122,7 +139,7 @@ class Orchestrate(task.Task):
                 target = os.path.join(target_folder, target)
                 shutil.copy2(src, target)
 
-            self.new_goal = "misfit %s" % contents["model_name"]
+            self.new_goal = "%s %s" % (task, contents["model_name"])
             self.next_steps = [
                 {"task_type": "ProjectModel",
                  "inputs": {"regular_model_folder": target_folder},
@@ -135,7 +152,7 @@ class Orchestrate(task.Task):
                 }
             ]
             return
-        if contents["task"] == "gradient":
+        elif task == "gradient":
             # Make sure the forward run is part of the inputs.
             self._assert_input_exists("hpc_agere_fwd_job_id")
             self._assert_input_exists("model_name")
@@ -149,7 +166,6 @@ class Orchestrate(task.Task):
                 "priority": 0
             }]
             self.new_goal = "gradient %s" % self.inputs["model_name"]
-
         else:
             raise NotImplementedError
 
@@ -208,7 +224,6 @@ class Orchestrate(task.Task):
             contents = self.parse_current_seismopt_file()
 
             iteration, _, *name = model.split("_")
-            name = "_".join(name)
             iteration = "ITERATION_%s" % iteration
 
             # Make sure the iteration is consistent.
@@ -267,6 +282,23 @@ class Orchestrate(task.Task):
             self.copy_gradient_to_opt(contents["iteration"],
                                       contents["prefix"],
                                       gradient)
+
+            # The misfit_and_gradient task also requires the misfit to be
+            # written.
+            if contents["task"] == "misfit_and_gradient":
+                iteration, _, *name = model.split("_")
+                iteration = "ITERATION_%s" % iteration
+
+                # Make sure the iteration is consistent.
+                assert iteration == contents["iteration"], "'%s' != '%s'" % (
+                    iteration, contents["iteration"])
+
+                # Also the model name.
+                assert model == contents["model_name"]
+
+                # Assume its still valid. Write the misfit and run seimopt.
+                self.write_misfit_to_opt(iteration, contents["prefix"], model)
+
             self.next_steps = [{
                 "task_type": "RunSeismOpt",
                 "priority": 0
