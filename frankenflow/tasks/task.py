@@ -1,8 +1,10 @@
 import abc
 import datetime
+import functools
 import glob
 import os
 import shutil
+import socket
 import subprocess
 import time
 
@@ -15,6 +17,27 @@ class TaskCheckFailed(Exception):
 
 class TaskFailedPreStagingCheck(Exception):
     pass
+
+
+class retry():
+    """
+    Decorator that will keep retrying the operation after a timeout.
+    """
+    def __init__(self, retries):
+        self.retries = retries
+
+    def __call__(self, f):
+        def wrapped_f(*args, **kwargs):
+            for _ in range(self.retries):
+                try:
+                    retval = f(*args, **kwargs)
+                except socket.timeout:
+                    continue
+                else:
+                    return retval
+                raise
+
+        return wrapped_f
 
 
 class Task(metaclass=abc.ABCMeta):
@@ -89,6 +112,14 @@ class Task(metaclass=abc.ABCMeta):
     def generate_next_steps(self):
         pass
 
+    @retry(5)
+    def remote_mkdir(self, path, mode=511):
+        return self.sftp_client.mkdir(path=path, mode=mode)
+
+    @retry(5)
+    def remote_listdir(self, path):
+        return self.sftp_client.listdir(path=path)
+
     def get_events(self):
         events = glob.glob(os.path.join(self.c["lasif_project"], "EVENTS",
                                         "*.xml"))
@@ -129,7 +160,9 @@ class Task(metaclass=abc.ABCMeta):
         self.ssh_client.load_system_host_keys()
         self.ssh_client.connect(
             username=info["username"],
-            hostname=info["hostname"])
+            hostname=info["hostname"],
+            # Two minutes should be good for most things.
+            timeout=120)
 
         self.sftp_client = self.ssh_client.open_sftp()
 

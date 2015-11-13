@@ -41,23 +41,21 @@ class CopyAdjointSourcesToHPC(task.Task):
             self.c["hpc_adjoint_source_folder"], self.inputs["model_name"])
 
         try:
-            contents = self.sftp_client.listdir(
-                self.c["hpc_adjoint_source_folder"])
+            contents = self.remote_listdir(self.c["hpc_adjoint_source_folder"])
         except FileNotFoundError:
-            self.sftp_client.mkdir(self.c["hpc_adjoint_source_folder"])
-            contents = self.sftp_client.listdir(
-                self.c["hpc_adjoint_source_folder"])
+            self.remote_mkdir(self.c["hpc_adjoint_source_folder"])
+            contents = self.remote_listdir(self.c["hpc_adjoint_source_folder"])
 
         assert self.inputs["model_name"] not in contents, \
             "Remote folder '%s' already exists." % (
                 self.remote_adjoint_source_directory)
 
     def stage_data(self):
-        self.sftp_client.mkdir(self.remote_adjoint_source_directory)
+        self.remote_mkdir(self.remote_adjoint_source_directory)
 
     def check_post_staging(self):
         # Will make sure it exists.
-        self.sftp_client.listdir(self.remote_adjoint_source_directory)
+        self.remote_listdir(self.remote_adjoint_source_directory)
 
     def run(self):
         for folder in self.folders_to_copy:
@@ -77,7 +75,7 @@ class CopyAdjointSourcesToHPC(task.Task):
             remote_folder = os.path.join(
                 self.remote_adjoint_source_directory,
                 os.path.basename(folder))
-            remote_contents = set(self.sftp_client.listdir(remote_folder))
+            remote_contents = set(self.remote_listdir(remote_folder))
 
             difference = local_contents.difference(remote_contents)
 
