@@ -1,4 +1,7 @@
+import collections
+import glob
 import os
+import re
 
 import flask
 
@@ -33,6 +36,24 @@ def iterate():
 @app.route("/status")
 def status():
     return flask.jsonify(app.flow_manager.current_status)
+
+
+@app.route("/misfits")
+def misfits():
+    misfit_folder = app.flow_manager.info["output_folders"]["misfits"]
+    files = glob.glob(os.path.join(misfit_folder, "iteration_*.txt"))
+
+    contents = collections.OrderedDict()
+
+    for filename in files:
+        name = re.sub(r"^iteration_", "", os.path.basename(filename))
+        name = re.sub(r"\.txt$", "", name)
+        with open(filename, "rt") as fh:
+            misfit = float(fh.read())
+
+        contents[name] = misfit
+
+    return flask.jsonify(contents)
 
 
 @app.route("/reset/<job_id>")
