@@ -40,7 +40,7 @@ class Orchestrate(task.Task):
 
         if goal_type == "misfit":
             self.misfit_goal(model)
-        elif goal_type:
+        elif goal_type == "gradient":
             self.gradient_goal(model)
         elif goal_type == "misfit_and_gradient":
             self.misfit_and_gradient_goal(model)
