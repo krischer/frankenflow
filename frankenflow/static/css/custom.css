@@ -121,3 +121,37 @@ body {
 #status_tooltip {
     height: 23px;
 }
+
+.modal-content {
+    background-color: #282923;
+    color: #CECBCB;
+    border-radius: 0px;
+}
+
+.modal-body {
+    padding: 20px 50px 10px 50px;
+}
+
+.modal-title {
+    color: #FC1E70;
+    font-weight: 900;
+    font-size: x-large;
+    text-shadow: 1px 1px 4px black;
+    padding-left: 20px;
+}
+
+.modal-header {
+    border: 0px;
+}
+
+.close {
+    color: white;
+}
+
+th {
+    padding-bottom: 10px;
+    font-size: larger;
+    font-weight: 900;
+}
+
+

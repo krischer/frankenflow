@@ -192,7 +192,8 @@ $('#misfit_evolution_button').on('click', function() {
         success: function(data) {
 
             $("#misfit-table").empty().append(function() {
-                var output = "<tr><th>Model Name</th><th>Misfit</th></tr>";
+                var output = "<tr><th style='border:0px'>Model Name</th>" +
+                    "<th style='border:0px'>Misfit</th></tr>";
                 _.forEach(data.misfits, function(n) {
                     output += "<tr><td>" + n.model_name +
                         "</td><td>" + n.misfit + "</td></tr>";
