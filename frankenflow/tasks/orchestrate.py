@@ -40,8 +40,10 @@ class Orchestrate(task.Task):
 
         if goal_type == "misfit":
             self.misfit_goal(model)
-        elif goal_type in ("gradient", "misfit_and_gradient"):
+        elif goal_type:
             self.gradient_goal(model)
+        elif goal_type == "misfit_and_gradient":
+            self.misfit_and_gradient_goal(model)
         else:
             raise NotImplementedError
 
@@ -153,21 +155,51 @@ class Orchestrate(task.Task):
             ]
             return
         elif task == "gradient":
-            # Make sure the forward run is part of the inputs.
-            self._assert_input_exists("hpc_agere_fwd_job_id")
-            self._assert_input_exists("model_name")
-
-            self.next_steps = [{
-                "task_type": "CalculateAdjointSources",
-                "inputs": {
-                    "model_name": self.inputs["model_name"],
-                    "hpc_agere_fwd_job_id": self.inputs["hpc_agere_fwd_job_id"]
-                },
-                "priority": 0
-            }]
+            self.launch_adjoint_source_calculation()
             self.new_goal = "gradient %s" % self.inputs["model_name"]
         else:
             raise NotImplementedError
+
+    def launch_adjoint_source_calculation(self):
+        # Make sure the forward run is part of the inputs.
+        self._assert_input_exists("hpc_agere_fwd_job_id")
+        self._assert_input_exists("model_name")
+
+        self.next_steps = [{
+            "task_type": "CalculateAdjointSources",
+            "inputs": {
+                "model_name": self.inputs["model_name"],
+                "hpc_agere_fwd_job_id": self.inputs["hpc_agere_fwd_job_id"]
+            },
+            "priority": 0
+        }]
+
+    def misfit_and_gradient_goal(self, model):
+        # This function can be entered at two seperate points in time. Once
+        # after the misfit calculation and once after the gradient
+        # calculation.
+
+        # We first determine if the misfit has been calculated. That MUST
+        # always be the case.
+        misfit_file = self.get_misfit_file(model)
+        assert os.path.exists(misfit_file), "Misfit must always exist!"
+
+
+        # Let's figure out if the gradient folder exists.
+        gradient_name = model.replace("_model_", "_gradient_")
+
+        gradient_folder = os.path.join(
+            self.context["optimization_dir"], gradient_name)
+
+        # If it does not exist, initialize jobs to create it.
+        if not os.path.exists(gradient_folder):
+            self.launch_adjoint_source_calculation()
+            self.new_goal = self.current_goal
+
+        else:
+            # Otherwise do the normal thing that is done after a gradient
+            # has been calculated.
+            self.gradient_goal(model)
 
     def store_opt_next_file(self):
         """
@@ -306,11 +338,14 @@ class Orchestrate(task.Task):
 
             self.new_goal = None
 
-    def write_misfit_to_opt(self, iteration, prefix, model_name):
-        # Read the misfit.
-        misfit_file = os.path.join(
+    def get_misfit_file(self, model_name):
+        return os.path.join(
             self.context["output_folders"]["misfits"],
             "iteration_%s.txt" % model_name)
+
+    def write_misfit_to_opt(self, iteration, prefix, model_name):
+        # Read the misfit.
+        misfit_file = self.get_misfit_file(model_name)
         assert os.path.exists(misfit_file)
 
         with open(misfit_file, "rt") as fh:
