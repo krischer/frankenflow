@@ -45,7 +45,8 @@ class CopyGradientsFromHPC(task.Task):
                            self.hpc_kernel_directory),
                self.local_kernel_directory]
 
-        self._run_external_script(cwd=".", cmd=cmd)
+        retcode = self._run_external_script(cwd=".", cmd=cmd)
+        assert retcode == 0, "rsync encountered an error."
 
     def check_post_run(self):
         c = self.context["config"]

@@ -37,8 +37,13 @@ class CopyWaveformsFromHPC(task.Task):
         pass
 
     def run(self):
-        self.remote_get(self.inputs["remote_waveform_tar_file"],
-                        self.target_file)
+        cmd = ["scp",
+               "%s:%s" % (self.c["hpc_remote_host"],
+                          self.inputs["remote_waveform_tar_file"]),
+               self.target_file]
+
+        retcode = self._run_external_script(cwd=".", cmd=cmd)
+        assert retcode == 0, "scp encountered an error."
 
     def check_post_run(self):
         # Make sure it exists now.
