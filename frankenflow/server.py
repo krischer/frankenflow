@@ -102,7 +102,6 @@ def graph():
       if node["label"] in ("Start", "Orchestrate"):
         node["shape"] = "box"
 
-
     return flask.jsonify(json_graph)
 
 
@@ -132,8 +131,9 @@ def __main__():
         description="Launch the frankenflow server.")
     parser.add_argument("--port", default=12111,
                        help="web server port", type=int)
-    parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--open_to_outside", action="store_true")
+    parser.add_argument("--debug", action="store_true", help="debug mode")
+    parser.add_argument("--open_to_outside", action="store_true",
+                        help="access server from other computers")
     parser.add_argument("folder",
                         help="folder containing the frankenflow project")
 
