@@ -1,3 +1,4 @@
+import argparse
 import glob
 import os
 import re
@@ -127,8 +128,26 @@ def serve(flow_manager, port=12111, debug=False, open_to_outside=False):
 
 
 def __main__():
-    fm = FlowManager("/Users/lion/temp/kochel_flow/flow")
-    serve(flow_manager=fm, port=12111, debug=True, open_to_outside=False)
+    parser = argparse.ArgumentParser(
+        description="Launch the frankenflow server.")
+    parser.add_argument("--port", default=12111,
+                       help="web server port", type=int)
+    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--open_to_outside", action="store_true")
+    parser.add_argument("folder",
+                        help="folder containing the frankenflow project")
+
+    args = parser.parse_args()
+
+    if not os.path.exists(args.folder):
+        raise ValueError("Folder '%s' does not exist." % args.folder)
+
+    if not os.path.isdir(args.folder):
+        raise ValueError("'%s' is not a folder." % args.folder)
+
+    fm = FlowManager(args.folder)
+    serve(flow_manager=fm, port=args.port, debug=args.debug,
+          open_to_outside=args.open_to_outside)
 
 
 if __name__ == "__main__":
