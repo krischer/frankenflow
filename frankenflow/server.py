@@ -145,7 +145,7 @@ def __main__():
     if not os.path.isdir(args.folder):
         raise ValueError("'%s' is not a folder." % args.folder)
 
-    fm = FlowManager(args.folder)
+    fm = FlowManager(os.path.abspath(args.folder))
     serve(flow_manager=fm, port=args.port, debug=args.debug,
           open_to_outside=args.open_to_outside)
 

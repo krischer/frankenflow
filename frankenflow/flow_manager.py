@@ -10,8 +10,8 @@ from . import (celery_tasks, config, flow_graph, flow_status, utils, tasks,
 
 class FlowManager():
     def __init__(self, base_folder):
-        os.makedirs(base_folder, exist_ok=True)
-        self.base_folder = base_folder
+        assert os.path.exists(base_folder), "'%s' does not exist" % base_folder
+        self.base_folder = os.path.abspath(base_folder)
 
         # Init status and config.
         self.status = flow_status.FlowStatus(os.path.join(self.base_folder,
@@ -34,14 +34,7 @@ class FlowManager():
         output_folder = os.path.join(self.base_folder, "__OUTPUT")
 
         self.output_folders = {
-            "regular_grid_models": os.path.join(output_folder,
-                                                "regular_grid_models"),
-            "spec_elem_grid_models": os.path.join(output_folder,
-                                                  "spec_elem_grid_models"),
-            "regular_grid_gradients": os.path.join(output_folder,
-                                                   "regular_grid_gradients"),
-            "unsmoothed_spectral_element_grid_gradients": os.path.join(
-                output_folder, "unsmoothed_spectral_element_grid_gradients"),
+            "hdf5_models": os.path.join(output_folder, "hdf5_models"),
             # Collect all the misfits in simple text files.
             "misfits": os.path.join(output_folder, "misfits"),
             # Store all the seismopt next files.
@@ -266,10 +259,8 @@ class FlowManager():
         workflow. Each step will always triggers its next step.
         """
         # Must have an initial model. The rest will be derived.
-        folder = os.path.join(self.optimization_dir, "000_1_model")
-        assert os.path.exists(folder) and os.path.isdir(folder), (
-            "Could not create the initial jobs. No folder '%s' found." %
-            folder)
+        initial_model = os.path.abspath(os.path.join(self.data_folder,
+                                                     "000_model.h5"))
 
         # Add a start node that does not do anything.
         job_id, start = self.graph.add_job(task_type="Start", inputs={})
@@ -277,15 +268,15 @@ class FlowManager():
 
         # Add a project model task at the default priority.
         self.graph.add_job(
-            task_type="ProjectModel",
-            inputs={"regular_model_folder": folder},
+            task_type="ConvertModelToBinary",
+            inputs={"hdf5_model_path": initial_model},
             from_node=job_id
         )
 
         # Add a job to plot the starting model at a higher priority.
         self.graph.add_job(
-            task_type="PlotRegularGridModel",
-            inputs={"regular_model_folder": folder},
+            task_type="PlotHDF5Model",
+            inputs={"hdf5_model_path": initial_model},
             priority=1,
             from_node=job_id
         )
@@ -301,13 +292,7 @@ class FlowManager():
         os.makedirs(self.data_folder, exist_ok=True)
 
         required_files = {
-            "input_files/setup": "SES3D INPUT/setup files",
-            "block_x": "SES3D block_x file",
-            "block_y": "SES3D block_y file",
-            "block_z": "SES3D block_z file",
-            "seismopt/opt_settings.xml": "Initial seismopt settings",
-            "seismopt/optlib.exe": "seismopt executable",
-            "seismopt/ses3d.cfg": "seismopt configuration"
+            "000_model.h5": "Initial Model"
         }
 
         for filename, description in required_files.items():
