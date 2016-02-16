@@ -1,11 +1,12 @@
 import importlib
 import os
+import re
 
 for module in os.listdir(os.path.dirname(__file__)):
     if module == '__init__.py' or not module.endswith('.py'):
         continue
 
-    module = ".tasks." + module.rstrip(".py")
+    module = ".tasks." + re.sub("\.py$", "", module)
     importlib.import_module(module, package="frankenflow")
 del module
 
