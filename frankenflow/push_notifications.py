@@ -29,13 +29,17 @@ def send_notification(title, message, sound="magic"):
                       "notification has been.")
         return
 
-    r = requests.post(_URL, data={
-        "token": config["api_token"],
-        "user": config["user_key"],
-        "device": config["device"],
-        "message": message,
-        "title": title,
-        "sound": sound})
+    try:
+        r = requests.post(_URL, data={
+            "token": config["api_token"],
+            "user": config["user_key"],
+            "device": config["device"],
+            "message": message,
+            "title": title,
+            "sound": sound})
+        if not r.ok:
+            warnings.warn("Failed to send notification because: %s" % r.reason)
+    except requests.exceptions.ConnectionError:
+        warnings.warn("Failed to send notification - connection error. No "
+                      "internet access?")
 
-    if not r.ok:
-        warnings.warn("Failed to send notification because: %s" % r.reason)
