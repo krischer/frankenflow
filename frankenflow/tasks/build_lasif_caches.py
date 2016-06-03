@@ -33,7 +33,7 @@ class BuildLASIFCaches(task.Task):
         next_steps = []
         # Now we need to either migrate the windows or pick new ones.
         # We'll only pick new ones if the current iteration is iteration 0.
-        if self.inputs["model_name"] == "000_1_model":
+        if self.inputs["model_name"] == "000_model":
             next_steps.append({
                 "task_type": "SelectWindows",
                  "priority": 0
