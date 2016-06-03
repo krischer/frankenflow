@@ -34,6 +34,10 @@ class CopyModelToHPC(task.Task):
             self.context["config"]["hpc_agere_project"],
             "__MODELS")
 
+        print("================")
+        print(self.remote_model_directory)
+        print("================")
+
         # Make sure this directory exists but does not have the model yet.
         existing_models = self.remote_listdir(self.remote_model_directory)
         assert self.inputs["model_name"] not in existing_models, (

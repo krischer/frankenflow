@@ -71,7 +71,7 @@ class ProjectModel(task.Task):
     def generate_next_steps(self):
         next_steps = [
             # Produce a plot of the projected model.
-            {"task_type": "PlotSpectralElementGridModel",
+            {"task_type": "PlotSES3DBinaryFormatModel",
              "inputs": {
                  "model_name": os.path.basename(self._output_directory)
              },

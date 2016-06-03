@@ -35,6 +35,8 @@ class FlowManager():
 
         self.output_folders = {
             "hdf5_models": os.path.join(output_folder, "hdf5_models"),
+            "ses3d_format_models": os.path.join(output_folder,
+                                                "ses3d_format_models"),
             # Collect all the misfits in simple text files.
             "misfits": os.path.join(output_folder, "misfits"),
             # Store all the seismopt next files.

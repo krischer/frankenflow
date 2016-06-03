@@ -1,13 +1,31 @@
 # frankenflow
 
-`frankenflow` is a workflow engine stitching together everything like a mad doctor - intended to ease long running (weeks to months!) iterative workflows. The current realization can orchestrate (an)elastic full seismic waveform inversions with an L-BFGS optimization scheme.
+`frankenflow` is a workflow engine stitching together everything like a mad doctor - intended to ease long running (weeks to months!) iterative workflows. **The current realization can orchestrate (an)elastic full seismic waveform inversions using passive seismic data on regional to continental scales with an L-BFGS optimization scheme.** 
 
-As of now this is not written to be used by anyone but me. Nonetheless feel free to take and utilize what you want and if you have created something valuable: why not give back in terms of a pull request. If there is interest it would also be possible to abstract the concepts a bit more to allow the clean implementation of arbitrary workflows.
+
+### Features
+
+* **Fully Automatic:** Requires no user-interaction after the initial setup and when changing the frequency band.
+* **Cell Phone Reporting:** Sends push messages to your cell phone upon important events like reaching a new iteration or launching expensive HPC simulations. Grants a certain degree of control even when away from the PC.
+* **Beautiful Web Inteface:** Easily get information about the current state, the execution graph, stop and restart it, directly from the browser.
+* **Defensive:** Exhaustive run-time checks to assert things go according to plan. Anything strange will cause the workflow to halt and wait for user input. It thus takes care to not waste precious HPC core hours.
+
+
+### Disclaimer
+
+As of now **this is not written to be used by anyone but me** and I don't intent to support it. Nonetheless feel free to take and utilize what you want and if you have created something valuable: why not give back in terms of a pull request? Assuming there is interest it would also be possible to abstract the concepts a bit more to allow the clean implementation of arbitrary workflows.
+
+
+### High-Level Overview
+
+`frankenflow` runs on a local workstation which is used to orchestrate the workflow. It communicates with external compute resources (e.g. your local and trusty big machine) via SSH as that works fine and requires almost no setup.
 
 
 ### Prerequisites
 
 Sophisticated results require intricate tools and we are standing on the shoulders of a number of great utilities. Thus `frankenflow` requires the installation of:
+
+##### Python and Third-Party Modules
 
 * Python 3.5 with the following modules
   * `paramiko`
@@ -23,27 +41,33 @@ $ conda create -n frankenflow python=3.5 paramiko celery networkx flask requests
 $ source activate frankenflow
 ```
 
-Additionally `redis` is required as the message broker. It should be available via most package managers, otherwise just download it and run `make`. 
+##### redis
+
+Additionally `redis` is required as the message broker. It should be available via most package managers, otherwise just download it and run `make`. It compiles almost everywhere and has no other dependencies. Great stuff!
+
+##### External Resources
 
 The current operating mode of `frankenflow` also requires access to a supercomputer to run `SES3D` and quite a lot of disc space. Also `LASIF` and `ses3d_ctrl`/`agere` must be installed (they require a different Python version then `frankenflow` - `conda` environments are a very simple way to set that up).
 
-`frankenflow` is currently tuned to perform a full waveform tomography, but the general concepts translates easily enought to arbitrary workflows. Let me know if there is interest and I'll abstract it a bit more to enable clean implementations of other workflows.
-
-Some more details regarding the utilized conglomerate of tools:
-
-* `LASIF` (http://lasif.net) is used to for the data management and organizational part of the full waveform inversion. Additionally it performs the window selection and adjoint source calculation.
-* `SES3D` (MISSING LINK) performs the numerical forward and adjoint simulations. `ses3d_ctrl`/`agere` (MISSING LINK) is responsible for compiling and running SES3D and moving things where they need to go.
-* `seismopt` (MISSING LINK) performs and steers the numerical optimization with an L-BFGS algorihtm. 
-* `frankenflow` pipes all of these together to form a fully automatic system.
+Additionally you must setup key based SSH authentication from the workstation to the HPC. The simple result is that the workstation has to be able to log into the HPC without entering a password. `frankenflow` thus does not have to deal with authentication.
 
 
+##### Our packages/tools
 
-### Getting Started
+A couple of other tools are required. `LOCAL` means that it must be installed locally, `HPC` that it must be installed on the HPC.
 
-1. `LASIF` project with a defined Iteration `0`. Thus all sources and receivers and what not needs to be set up. No other iterations should be presetn. Also make sure the window picking is tuned to work well for your tomography.
-2. Input files for the forward run `lasif generate_all_input_files 0` copied
-   to the HPC to the `hpc_remote_input_files_directory` as specified in the 
-   configuration.
+* `LASIF` (http://lasif.net) - `LOCAL` + `HPC` -  is used to for the data management and organizational part of the full waveform inversion. Additionally it performs the window selection and adjoint source calculation.
+* `SES3D` (MISSING LINK) - `HPC` - performs the numerical forward and adjoint simulations. `ses3d_ctrl`/`agere` (MISSING LINK) is responsible for compiling and running SES3D and moving things where they need to go.
+* `seismopt` (MISSING LINK) - `LOCAL` - performs and steers the numerical optimization with an L-BFGS algorihtm. 
+* `frankenflow` - `LOCAL` - pipes all of these together to form a fully automatic system.
+
+
+### Seting up the Inversion
+
+Some of this might seem awkward but that's just how it is right now.
+
+1. `LASIF` project with a defined Iteration `0`. Thus all sources and receivers and what not needs to be set up. No other iterations should be present. Also make sure the window picking is tuned to work well for your tomography.
+2. Input files for the forward run, e.g. `lasif generate_all_input_files 0` copied to the HPC to the `hpc_remote_input_files_directory` as specified in the  configuration file.
 3. Initial model in the HDF5 format. Can be created with `agere binary_model_to_hdf5`.
 4. A `config.json` akin to the following:
 
@@ -86,6 +110,7 @@ With the following meaning:
 * `walltime_per_event_adjoint`: The walltime in hours for the adjount simulations per event.
 
 
+The initial run directory of the inversion should look thus like this:
 
 ```
 .
@@ -94,13 +119,16 @@ With the following meaning:
 └── config.json
 ```
 
+It is probably a fine idea to copy that and also the LASIF project in the initial state as `frankenflow` is unlikely to work the very first try. The copies make it trivial to restart the whole endeavour.
+
+
 ### Running frankenflow
 
-Four things need to run at once. I recommend to use `screen`/`tmux` for this purpose:
+Four things need to run at once. I recommend to use `screen`/`tmux` for this purpose and just launch everything in a different pane/tab:
 
 1. `redis` - Either run via your system's services or just launch `redis-server`.
 2. `celery` workers. Launch with 
    `celery -A frankenflow worker --loglevel=debug --pool=prefork --concurrency=1`
-    No need to use a higher concurrency as `frankenflow` is serial for now. I might enable parallel execution in the future as its really easy to do but so far there is really no need for that.
+    No need to use a higher concurrency as `frankenflow` is serial for now. I might enable parallel execution in the future as its really easy to do but so far there is really no need for that as the workflow is almost completely sequential.
 3. The `frankenflow` server. Launch with `python -m frankenflow.server /path/to/flow_folder`.
-4. Something to trigger workflow iteration. A simple bash script will do.
+4. Something to trigger workflow iteration every couple of seconds. A simple bash script will do.

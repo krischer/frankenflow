@@ -58,6 +58,7 @@ class ForwardSimulation(task.Task):
         c = self.context["config"]
 
         # Make sure the model directory exists.
+        print("EXECUTING COMMAND!!!!")
         cmd = ("{agere} run_forward --model={model_name} --fw-lpd={fw_lpd} "
                "--wall-time-per-event={walltime_per_event} "
                "--pml-count={pml_count} "
@@ -71,6 +72,8 @@ class ForwardSimulation(task.Task):
             input_files=os.path.join(self.remote_input_file_directory, "*"))
 
         stdout, stderr = self._run_ssh_command(cmd)
+        print(cmd)
+        print("DONE COMMAND!!!!")
 
         with open(self.stdout, "at") as fh:
             fh.write("\n\n")
@@ -104,6 +107,14 @@ class ForwardSimulation(task.Task):
 
             stdout, stderr = self._run_ssh_command(
                 "%s status" % self.c["hpc_agere_cmd"])
+
+            print("=======================")
+            print("=======================")
+            print(stdout)
+            print("=======================")
+            print(stderr)
+            print("=======================")
+            print("=======================")
 
             finished = False
 

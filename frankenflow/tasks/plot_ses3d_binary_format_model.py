@@ -4,7 +4,7 @@ import shutil
 from . import task
 
 
-class PlotSpectralElementGridModel(task.Task):
+class PlotSES3DBinaryFormatModel(task.Task):
     """
     Task plotting a regular grid model.
     """
@@ -51,7 +51,7 @@ class PlotSpectralElementGridModel(task.Task):
         # Copy the files
         for src in self.filenames:
             dest = os.path.join(
-                self.context["output_folders"]["spec_elem_grid_models"],
+                self.context["output_folders"]["ses3d_format_models"],
                 os.path.basename(src))
             shutil.copy2(src, dest)
 

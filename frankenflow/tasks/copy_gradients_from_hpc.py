@@ -13,6 +13,7 @@ class CopyGradientsFromHPC(task.Task):
         return {"hpc_agere_bwd_job_id"}
 
     def check_pre_staging(self):
+        raise Exception
         c = self.context["config"]
 
         self._init_ssh_and_stfp_clients()
