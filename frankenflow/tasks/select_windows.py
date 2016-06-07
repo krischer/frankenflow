@@ -7,7 +7,7 @@ class SelectWindows(task.Task):
     """
     @property
     def required_inputs(self):
-        return set()
+        return {"model_name"}
 
     def check_pre_staging(self):
         pass
@@ -20,7 +20,7 @@ class SelectWindows(task.Task):
 
     def run(self):
         cmd = ["mpirun", "-n", "4", self.c["lasif_cmd"], "select_all_windows",
-               "000_1_model"]
+               self.inputs["model_name"]]
         returncode = self._run_external_script(
             cwd=self.c["lasif_project"], cmd=cmd)
 

@@ -7,8 +7,8 @@ class RunSeismOpt(task.Task):
     """
     Node running seismopt.
 
-    Its pretty dumb. It just run seismopt and then returns to the
-    orchestration node.
+    Its not the brightest star on the horizon as far as nodes go: It just runs
+    seismopt and then returns to the orchestration node.
     """
     @property
     def required_inputs(self):

@@ -100,7 +100,7 @@ class ForwardSimulation(task.Task):
 
         # Check if job is done all two minutes.
         while True:
-            time.sleep(120)
+            time.sleep(10)
 
             stdout, stderr = self._run_ssh_command(
                 "%s status" % self.c["hpc_agere_cmd"])
