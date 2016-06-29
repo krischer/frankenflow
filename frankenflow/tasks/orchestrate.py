@@ -36,14 +36,14 @@ class Orchestrate(task.Task):
             self.steer_with_seismopt()
             return
 
-        goal_type, model = self.current_goal.split()
+        goal_type, iteration_name = self.current_goal.split()
 
         if goal_type == "misfit":
-            self.misfit_goal(model)
+            self.misfit_goal(iteration_name)
         elif goal_type == "gradient":
-            self.gradient_goal(model)
+            self.gradient_goal(iteration_name)
         elif goal_type == "misfit_and_gradient":
-            self.misfit_and_gradient_goal(model)
+            self.misfit_and_gradient_goal(iteration_name)
         else:
             raise NotImplementedError
 
@@ -85,7 +85,7 @@ class Orchestrate(task.Task):
             step_length = float(line_1.split()[-1])
             contents["step_length"] = step_length
 
-            model_name = "%s_x_model_steplength_%g" % (number, step_length)
+            model_name = "%s_model_steplength_%g" % (number, step_length)
             contents["model_name"] = model_name
 
         elif task == "misfit_and_gradient":
@@ -96,7 +96,7 @@ class Orchestrate(task.Task):
             step_length = float(line_1.split()[-1])
             contents["step_length"] = step_length
 
-            model_name = "%s_x_model_steplength_%g" % (number, step_length)
+            model_name = "%s_model_steplength_%g" % (number, step_length)
             contents["model_name"] = model_name
 
         return contents
@@ -213,21 +213,21 @@ class Orchestrate(task.Task):
 
         shutil.copy2(self.seismopt_next, target)
 
-    def misfit_goal(self, model):
-        # Initial model. Now we also need the gradient. The first step here
-        # is to calculate the adjoint sources.
-        if model == "000_1_model":
+    def misfit_goal(self, iteration_name):
+        # Initial iteration_name. Now we also need the gradient. The first
+        # step here is to calculate the adjoint sources.
+        if iteration_name == "000":
             # Make sure the forward run is part of the inputs.
             self._assert_input_exists("hpc_agere_fwd_job_id")
             self.next_steps = [{
                 "task_type": "CalculateAdjointSources",
                 "inputs": {
-                    "model_name": model,
+                    "iteration_name": iteration_name,
                     "hpc_agere_fwd_job_id": self.inputs["hpc_agere_fwd_job_id"]
                 },
                 "priority": 0
             }]
-            self.new_goal = "gradient %s" % model
+            self.new_goal = "gradient %s" % iteration_name
         else:
             # Make sure the forward run is part of the inputs as it has to
             # passed on to the potential adjoint simulation.
@@ -255,25 +255,25 @@ class Orchestrate(task.Task):
 
             contents = self.parse_current_seismopt_file()
 
-            iteration, _, *name = model.split("_")
+            iteration, _, *name = iteration_name.split("_")
             iteration = "ITERATION_%s" % iteration
 
             # Make sure the iteration is consistent.
             assert iteration == contents["iteration"], "'%s' != '%s'" % (
                 iteration, contents["iteration"])
 
-            # Also the model name.
-            assert model == contents["model_name"]
+            # Also the iteration_name name.
+            assert iteration_name == contents["model_name"]
 
             # Assume its still valid. Write the misfit and run seimopt.
-            self.write_misfit_to_opt(iteration, contents["prefix"], model)
+            self.write_misfit_to_opt(iteration, contents["prefix"], iteration_name)
 
             self.next_steps = [{
                 "task_type": "RunSeismOpt",
                 "inputs": {
                     "hpc_agere_fwd_job_id": self.inputs[
                         "hpc_agere_fwd_job_id"],
-                    "model_name": model
+                    "model_name": iteration_name
                 },
                 "priority": 0
             }]

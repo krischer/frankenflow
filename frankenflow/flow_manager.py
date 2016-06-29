@@ -202,6 +202,21 @@ class FlowManager():
 
                 # No matter the outcome. Always save the graph.
                 self.graph.serialize()
+            # Run failed due to some programming error.
+            elif result.state == "FAILURE":
+                job["job_status"] = "failed"
+                self.status["current_status"] = "System Error"
+
+                msg = "Uncaught exception during celery task execution:\n\n%s"\
+                    % result.traceback
+                self.status["current_message"] = msg
+
+                # Also send a push notification.
+                push_notifications.send_notification(
+                    title="System error.",
+                    message=msg)
+
+            # Catch unknown problem.
             else:
                 job["job_status"] = result.state
                 self.status["current_status"] = "????"
@@ -260,9 +275,7 @@ class FlowManager():
         Create the first job which is then used to trigger the rest of the
         workflow. Each step will always triggers its next step.
         """
-        # Must have an initial model. The rest will be derived.
-        initial_model = os.path.abspath(os.path.join(self.data_folder,
-                                                     "000_model.h5"))
+        initial_iteration = "000"
 
         # Add a start node that does not do anything.
         job_id, start = self.graph.add_job(task_type="Start", inputs={})
@@ -271,14 +284,14 @@ class FlowManager():
         # Add a project model task at the default priority.
         self.graph.add_job(
             task_type="ConvertModelToBinary",
-            inputs={"hdf5_model_path": initial_model},
+            inputs={"iteration_name": initial_iteration},
             from_node=job_id
         )
 
         # Add a job to plot the starting model at a higher priority.
         self.graph.add_job(
             task_type="PlotHDF5Model",
-            inputs={"hdf5_model_path": initial_model},
+            inputs={"iteration_name": initial_iteration},
             priority=1,
             from_node=job_id
         )
@@ -286,7 +299,7 @@ class FlowManager():
         self.graph.serialize()
 
         # Set the current goal to calculate the misfit for model 000_1_model
-        self.status["current_goal"] = "misfit 000_1_model"
+        self.status["current_goal"] = "misfit 000"
 
     def __check_data_files(self):
         # A couple of files are needed.

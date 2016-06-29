@@ -12,19 +12,14 @@ class CopyModelToHPC(task.Task):
     """
     @property
     def required_inputs(self):
-        return {"model_name"}
+        return {"iteration_name"}
 
     def check_pre_staging(self):
-        self.inputs["model_name"] = self.inputs["model_name"].lower()
-
         # Make sure the folder does exist.
-        self.model_folder = os.path.join(
-            self.context["config"]["lasif_project"], "MODELS",
-            self.inputs["model_name"])
-        assert os.path.exists(self.model_folder), \
-            "'%s' does not exist" % self.model_folder
-        assert os.path.isdir(self.model_folder), \
-            "'%s' is not a folder" % self.model_folder
+        assert os.path.exists(self.binary_model_path), \
+            "'%s' does not exist" % self.binary_model_path
+        assert os.path.isdir(self.binary_model_path), \
+            "'%s' is not a folder" % self.binary_model_path
 
         self._init_ssh_and_stfp_clients()
 
@@ -34,37 +29,36 @@ class CopyModelToHPC(task.Task):
             self.context["config"]["hpc_agere_project"],
             "__MODELS")
 
+        self.model_name = os.path.basename(self.binary_model_path)
+
         # Make sure this directory exists but does not have the model yet.
-        self.remote_mkdir(self.remote_model_directory)
+        if "__MODELS" not in self.remote_listdir(
+                self.context["config"]["hpc_agere_project"]):
+            self.remote_mkdir(self.remote_model_directory)
+
         existing_models = self.remote_listdir(self.remote_model_directory)
-        assert self.inputs["model_name"] not in existing_models, (
+        assert self.model_name not in existing_models, (
             "Model '%s' already exists in %s:%s" % (
-                self.inputs["model_name"],
+                self.model_name,
                 self.context["config"]["hpc_remote_host"],
                 self.remote_model_directory))
 
         self.remote_target_directory = os.path.join(
-            self.remote_model_directory, self.inputs["model_name"])
+            self.remote_model_directory, self.model_name)
 
+    def stage_data(self):
         self.remote_mkdir(self.remote_target_directory)
 
-        # Make sure this worked.
+    def check_post_staging(self):
         existing_models = self.remote_listdir(self.remote_model_directory)
-        assert self.inputs["model_name"] in existing_models, (
+        assert self.model_name in existing_models, (
             "Creating folder %s:%s failed." % (
                 self.context["config"]["hpc_remote_host"],
                 self.remote_target_directory))
 
-    def stage_data(self):
-        pass
-
-    def check_post_staging(self):
-        pass
-
     def run(self):
-        self.input_files = os.listdir(self.model_folder)
-        for filename in self.input_files:
-            src = os.path.join(self.model_folder, filename)
+        for filename in os.listdir(self.binary_model_path):
+            src = os.path.join(self.binary_model_path, filename)
             target = os.path.join(self.remote_target_directory, filename)
             self.remote_put(src, target)
 
@@ -73,7 +67,7 @@ class CopyModelToHPC(task.Task):
         remote_files = set(
             self.remote_listdir(self.remote_target_directory))
 
-        local_files = set(self.input_files)
+        local_files = set(os.listdir(self.binary_model_path))
 
         missing_files = local_files.difference(remote_files)
 

@@ -240,3 +240,24 @@ class Task(metaclass=abc.ABCMeta):
         for file in self.context["data"]["block_files"]:
             filename = os.path.basename(file)
             shutil.copy2(file, os.path.join(target_dir, filename))
+
+    @property
+    def model_name(self):
+        return "%s_model" % self.inputs["iteration_name"]
+
+    @property
+    def hdf5_model_path(self):
+        """
+        Path of the HDF5 model assuming the current task has an
+        "iteration_name" input.
+        """
+        model_filename = "%s_model.h5" % self.inputs["iteration_name"]
+        return os.path.join(self.context["data_folder"], model_filename)
+
+    @property
+    def binary_model_path(self):
+        """
+        Path of the binary SES3D model assuming the current task has an
+        "iteration_name" input.
+        """
+        return os.path.join(self.c["lasif_project"], "MODELS", self.model_name)

@@ -14,11 +14,11 @@ class PlotHDF5Model(task.Task):
 
     @property
     def required_inputs(self):
-        return {"hdf5_model_path"}
+        return {"iteration_name"}
 
     def check_pre_staging(self):
-        filename = self.inputs["hdf5_model_path"]
-        assert os.path.exists(filename), "'%s' does not exist" % filenmae
+        filename = self.hdf5_model_path
+        assert os.path.exists(filename), "'%s' does not exist" % filename
 
         model_name = os.path.splitext(os.path.basename(filename))[0]
 
@@ -44,7 +44,7 @@ class PlotHDF5Model(task.Task):
             cmd = [
                 self.context["config"]["agere_cmd"],
                 "plot_hdf5",
-                self.inputs["hdf5_model_path"],
+                self.hdf5_model_path,
                 key,
                 os.path.join(self.working_dir, value)]
             self._run_external_script(cwd=".", cmd=cmd)

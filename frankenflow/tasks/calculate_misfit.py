@@ -10,7 +10,7 @@ class CalculateMisfit(task.Task):
     """
     @property
     def required_inputs(self):
-        return {"model_name"}
+        return {"iteration_name"}
 
     def check_pre_staging(self):
         pass
@@ -32,9 +32,8 @@ class CalculateMisfit(task.Task):
         # Should be a good enough check.
         assert returncode == 0, "Script return with code %i" % returncode
 
-
         cmd = ["mpirun", "-n", "4", self.c["lasif_cmd"],
-               "compare_misfits","000_1_model", self.inputs["model_name"]]
+               "compare_misfits", "000", self.inputs["iteration_name"]]
 
         returncode = self._run_external_script(
             cwd=self.c["lasif_project"], cmd=cmd)
@@ -75,7 +74,7 @@ class CalculateMisfit(task.Task):
             filename = os.path.join(misfit_folder, "iteration_%s.txt" % key)
 
             if os.path.exists(filename):
-                if key != "000_1_model":
+                if key != "000":
                     raise ValueError(
                         "Misfit for iteration %s already exists!" % key)
                 continue

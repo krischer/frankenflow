@@ -9,20 +9,15 @@ class ConvertModelToBinary(task.Task):
     """
     @property
     def required_inputs(self):
-        return {"hdf5_model_path"}
+        return {"iteration_name"}
 
     def check_pre_staging(self):
-        filename = self.inputs["hdf5_model_path"]
-        assert os.path.exists(filename), "'%s' does not exist" % filenmae
+        filename = self.hdf5_model_path
+        assert os.path.exists(filename), "'%s' does not exist" % filename
 
-        # The file will be created in the LASIF project.
-        model_name = os.path.splitext(os.path.basename(filename))[0]
-        self.model_folder = os.path.join(
-                self.context["config"]["lasif_project"], "MODELS",
-                model_name)
         # Make sure it does not yet exist.
-        assert not os.path.exists(self.model_folder), \
-            "'%s' does already exist" % self.model_folder
+        assert not os.path.exists(self.binary_model_path), \
+            "'%s' does already exist" % self.binary_model_path
 
     def stage_data(self):
         pass
@@ -34,29 +29,23 @@ class ConvertModelToBinary(task.Task):
         cmd = [
             self.context["config"]["agere_cmd"],
             "hdf5_model_to_binary",
-            self.inputs["hdf5_model_path"],
-            self.model_folder]
+            self.hdf5_model_path,
+            self.binary_model_path]
         self._run_external_script(cwd=".", cmd=cmd)
 
     def check_post_run(self):
         # Now it should exist.
-        assert os.path.exists(self.model_folder), \
-            "'%s' did not get created." % self.model_folder
+        assert os.path.exists(self.binary_model_path), \
+            "'%s' did not get created." % self.binary_model_path
 
     def generate_next_steps(self):
         next_steps = [
             # Produce a plot of the projected model.
             {"task_type": "PlotSES3DBinaryFormatModel",
-             "inputs": {
-                 "model_name": os.path.basename(self.model_folder)
-             },
              "priority": 1
              },
             # Copy the model to the HPC.
             {"task_type": "CopyModelToHPC",
-             "inputs": {
-                 "model_name": os.path.basename(self.model_folder)
-             },
              "priority": 0
              }
         ]

@@ -13,11 +13,10 @@ class PlotSES3DBinaryFormatModel(task.Task):
 
     @property
     def required_inputs(self):
-        return {"model_name"}
+        return {"iteration_name"}
 
     def check_pre_staging(self):
-        folder = os.path.join(self.context["config"]["lasif_project"],
-                              "MODELS", self.inputs["model_name"])
+        folder = self.binary_model_path
         assert os.path.exists(folder), "'%s' does not exist" % folder
         assert os.path.isdir(folder), "'%s' is not a folder" % folder
 
@@ -31,14 +30,14 @@ class PlotSES3DBinaryFormatModel(task.Task):
         self.filenames = []
         variables = ["rho", "vsv", "vsh", "vp"]
         for variable in variables:
-            filename = "%s_%s_100km_depth.jpg" % (
-                self.inputs["model_name"], variable)
+            filename = "model_%s_%s_100km_depth.jpg" % (
+                self.inputs["iteration_name"], variable)
             filename = os.path.join(self.working_dir, filename)
             self.filenames.append(filename)
             cmd = [
                 self.context["config"]["lasif_cmd"],
                 "plot_model",
-                self.inputs["model_name"],
+                os.path.basename(self.binary_model_path),
                 "100",
                 variable,
                 filename]

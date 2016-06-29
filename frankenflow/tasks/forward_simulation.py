@@ -14,7 +14,7 @@ class ForwardSimulation(task.Task):
     """
     @property
     def required_inputs(self):
-        return {"model_name"}
+        return {"iteration_name"}
 
     def check_pre_staging(self):
         self._init_ssh_and_stfp_clients()
@@ -44,9 +44,8 @@ class ForwardSimulation(task.Task):
 
         # Make sure the model directory exists.
         existing_models = self.remote_listdir(self.remote_model_directory)
-        assert self.inputs["model_name"] in existing_models, (
-            "Model '%s' does not exist on the HPC" % (
-                self.inputs["model_name"]))
+        assert self.model_name in existing_models, (
+            "Model '%s' does not exist on the HPC" % self.model_name)
 
     def stage_data(self):
         pass
@@ -63,7 +62,7 @@ class ForwardSimulation(task.Task):
                "--pml-count={pml_count} "
                "--parallel-events={parallel_events} {input_files}").format(
             agere=self.c["hpc_agere_cmd"],
-            model_name=self.inputs["model_name"],
+            model_name=self.model_name,
             fw_lpd=c["forward_wavefield_storage_degree"],
             walltime_per_event=c["walltime_per_event_forward"],
             parallel_events=c["parallel_events"],
@@ -95,8 +94,8 @@ class ForwardSimulation(task.Task):
         # Send a push notification.
         push_notifications.send_notification(
             title="Launched Forward Simulation!",
-            message="Forward simulation for model %s" %
-                self.inputs["model_name"])
+            message="Forward simulation for iteration %s" %
+                self.iteration_name)
 
         # Check if job is done all two minutes.
         while True:
@@ -133,7 +132,7 @@ class ForwardSimulation(task.Task):
                 push_notifications.send_notification(
                     title="Finished Forward Simulation!",
                     message="Done with forward simulation for model %s" %
-                            self.inputs["model_name"])
+                            self.model_name)
                 break
 
     def check_post_run(self):

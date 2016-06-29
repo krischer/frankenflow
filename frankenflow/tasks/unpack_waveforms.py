@@ -10,7 +10,7 @@ class UnpackWaveforms(task.Task):
     """
     @property
     def required_inputs(self):
-        return {"local_waveform_tar_file", "model_name"}
+        return {"local_waveform_tar_file", "iteration_name"}
 
     def check_pre_staging(self):
         assert os.path.exists(self.inputs["local_waveform_tar_file"]), \
@@ -26,7 +26,7 @@ class UnpackWaveforms(task.Task):
     def run(self):
         cmd = [self.c["agere_cmd"],
                "unpack_waveforms",
-               "--iteration-name=%s" % self.inputs["model_name"],
+               "--iteration-name=%s" % self.inputs["iteration_name"],
                "--lasif-project=%s" % self.c["lasif_project"],
                self.inputs["local_waveform_tar_file"]]
         returncode = self._run_external_script(cwd=".", cmd=cmd)

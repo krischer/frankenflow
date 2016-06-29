@@ -7,8 +7,9 @@
 
 * **Fully Automatic:** Requires no user-interaction after the initial setup and when changing the frequency band.
 * **Cell Phone Reporting:** Sends push messages to your cell phone upon important events like reaching a new iteration or launching expensive HPC simulations. Grants a certain degree of control even when away from the PC.
-* **Beautiful Web Inteface:** Easily get information about the current state, the execution graph, stop and restart it, directly from the browser.
+* **Beautiful Web Interface:** Easily get information about the current state, the execution graph, stop and restart it, directly from the browser.
 * **Defensive:** Exhaustive run-time checks to assert things go according to plan. Anything strange will cause the workflow to halt and wait for user input. It thus takes care to not waste precious HPC core hours.
+* **Informative:** Produces pretty and informative pictures and files so you can always judge the progress of the inversion.
 
 
 ### Disclaimer
@@ -60,27 +61,41 @@ A couple of other tools are required. `LOCAL` means that it must be installed lo
 * `SES3D` (MISSING LINK) - `HPC` - performs the numerical forward and adjoint simulations. `ses3d_ctrl`/`agere` (MISSING LINK) is responsible for compiling and running SES3D and moving things where they need to go.
 * `seismopt` (MISSING LINK) - `LOCAL` - performs and steers the numerical optimization with an L-BFGS algorihtm. 
 * `frankenflow` - `LOCAL` - pipes all of these together to form a fully automatic system.
+* `ses3d_ctrl`/`agere` (MISSING LINK) - `LOCAL` + `HPC` - has to be configured to able to steer SES3D on the HPC.
+
+
+##### Push Notifications
+
+This is optional but recommended for expensive real world inversions: If you want to receive push notification you will have to sign up to pushover and create a `~/.pushover.json` file with the following contents (fill in your own information of course):
+
+```json
+{
+    "api_token": "XXX",
+    "user_key": "YYY",
+    "device": "DEVICE_NAME"
+}
+```
 
 
 ### Seting up the Inversion
 
 Some of this might seem awkward but that's just how it is right now.
 
-1. `LASIF` project with a defined Iteration `0`. Thus all sources and receivers and what not needs to be set up. No other iterations should be present. Also make sure the window picking is tuned to work well for your tomography.
-2. Input files for the forward run, e.g. `lasif generate_all_input_files 0` copied to the HPC to the `hpc_remote_input_files_directory` as specified in the  configuration file.
+1. `LASIF` project with a defined Iteration `000`. Thus all sources and receivers and what not needs to be set up. No other iterations should be present. Also make sure the window picking is tuned to work well for your tomography.
+2. Input files for the forward run, e.g. `lasif generate_all_input_files 000` copied to the HPC to the `hpc_remote_input_files_directory` as specified in the  configuration file.
 3. Initial model in the HDF5 format. Can be created with `agere binary_model_to_hdf5`.
 4. A `config.json` akin to the following:
 
 ```json
 {
-	"agere_cmd": "/Users/lion/.miniconda3/envs/obspy_py27/bin/agere",
-	"lasif_cmd": "/Users/lion/.miniconda3/envs/obspy_py27/bin/lasif",
+	"agere_cmd": "/Users/lion/.miniconda3/envs/lasif/bin/agere",
+	"lasif_cmd": "/Users/lion/.miniconda3/envs/lasif/bin/lasif",
 	"lasif_project": "/Users/lion/temp/flow_hdf5/LASIF_Project",
 
 	"hpc_remote_host": "localhost",
 	"hpc_agere_project": "/Users/lion/temp/yea/SES3D_CTRL_WORKING_DIR",
 	"hpc_remote_input_files_directory": "/Users/lion/temp/yea/SES3D_CTRL_WORKING_DIR/input_files",
-	"hpc_agere_cmd": "/Users/lion/.miniconda3/envs/obspy_py27/bin/agere",
+	"hpc_agere_cmd": "/Users/lion/.miniconda3/envs/lasif/bin/agere",
 	"hpc_adjoint_source_folder": "/Users/lion/temp/yea/SES3D_CTRL_WORKING_DIR/adjoint_sources",
 
 	"number_of_events": 2,
@@ -132,3 +147,8 @@ Four things need to run at once. I recommend to use `screen`/`tmux` for this pur
     No need to use a higher concurrency as `frankenflow` is serial for now. I might enable parallel execution in the future as its really easy to do but so far there is really no need for that as the workflow is almost completely sequential.
 3. The `frankenflow` server. Launch with `python -m frankenflow.server /path/to/flow_folder`.
 4. Something to trigger workflow iteration every couple of seconds. A simple bash script will do.
+
+
+The web interface can be reached at http://localhost:12111
+
+When initially triggered it will 
