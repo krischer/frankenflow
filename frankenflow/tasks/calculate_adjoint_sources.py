@@ -10,7 +10,7 @@ class CalculateAdjointSources(task.Task):
     """
     @property
     def required_inputs(self):
-        return {"model_name"}
+        return {"iteration_name"}
 
     def check_pre_staging(self):
         self.events = self.get_events()
@@ -24,7 +24,7 @@ class CalculateAdjointSources(task.Task):
             self.c["lasif_project"], "OUTPUT", "adjoint_sources")
         folders = glob.glob(os.path.join(
             ad_src_folder,
-            "*__ITERATION_%s__*" % self.inputs["model_name"]))
+            "*__ITERATION_%s__*" % self.inputs["iteration_name"]))
         folders = [_i for _i in folders if os.path.isdir(_i)]
         return folders
 
@@ -37,7 +37,7 @@ class CalculateAdjointSources(task.Task):
     def run(self):
         for event in self.events:
             cmd = [self.c["lasif_cmd"], "finalize_adjoint_sources",
-                   self.inputs["model_name"], event]
+                   self.inputs["iteration_name"], event]
             returncode = self._run_external_script(
                 cwd=self.c["lasif_project"], cmd=cmd)
 

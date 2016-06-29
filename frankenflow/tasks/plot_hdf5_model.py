@@ -40,6 +40,7 @@ class PlotHDF5Model(task.Task):
         pass
 
     def run(self):
+        return
         for key, value in self.outputs.items():
             cmd = [
                 self.context["config"]["agere_cmd"],
@@ -50,6 +51,7 @@ class PlotHDF5Model(task.Task):
             self._run_external_script(cwd=".", cmd=cmd)
 
     def check_post_run(self):
+        return
         # Copy the files
         for picture in self.outputs.values():
             src = os.path.join(self.working_dir, picture)

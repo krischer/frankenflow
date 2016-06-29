@@ -95,7 +95,7 @@ class ForwardSimulation(task.Task):
         push_notifications.send_notification(
             title="Launched Forward Simulation!",
             message="Forward simulation for iteration %s" %
-                self.iteration_name)
+                self.inputs["iteration_name"])
 
         # Check if job is done all two minutes.
         while True:
@@ -131,8 +131,8 @@ class ForwardSimulation(task.Task):
                 # Send a push notification.
                 push_notifications.send_notification(
                     title="Finished Forward Simulation!",
-                    message="Done with forward simulation for model %s" %
-                            self.model_name)
+                    message="Done with forward simulation for iteration %s" %
+                            self.inputs["iteration_name"])
                 break
 
     def check_post_run(self):

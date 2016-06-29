@@ -10,7 +10,7 @@ class CopyAdjointSourcesToHPC(task.Task):
     """
     @property
     def required_inputs(self):
-        return {"model_name"}
+        return {"iteration_name"}
 
     def check_pre_staging(self):
         self._init_ssh_and_stfp_clients()
@@ -23,7 +23,8 @@ class CopyAdjointSourcesToHPC(task.Task):
                                       "adjoint_sources")
 
         ad_srcs = glob.glob(os.path.join(
-            adj_src_folder, "*__ITERATION_%s__*" % self.inputs["model_name"]))
+            adj_src_folder, "*__ITERATION_%s__*" %
+            self.inputs["iteration_name"]))
 
         assert len(ad_srcs) == len(self.events), \
             "%i adjoint source folders found for %i events." % (
@@ -38,7 +39,8 @@ class CopyAdjointSourcesToHPC(task.Task):
 
         # Folder of the adjoint source on the remote HPC host.
         self.remote_adjoint_source_directory = os.path.join(
-            self.c["hpc_adjoint_source_folder"], self.inputs["model_name"])
+            self.c["hpc_adjoint_source_folder"],
+            self.inputs["iteration_name"])
 
         try:
             contents = self.remote_listdir(self.c["hpc_adjoint_source_folder"])
@@ -46,7 +48,7 @@ class CopyAdjointSourcesToHPC(task.Task):
             self.remote_mkdir(self.c["hpc_adjoint_source_folder"])
             contents = self.remote_listdir(self.c["hpc_adjoint_source_folder"])
 
-        assert self.inputs["model_name"] not in contents, \
+        assert self.model_name not in contents, \
             "Remote folder '%s' already exists." % (
                 self.remote_adjoint_source_directory)
 

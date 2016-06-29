@@ -12,7 +12,7 @@ class AdjointSimulation(task.Task):
     """
     @property
     def required_inputs(self):
-        return {"remote_adjoint_source_directory",
+        return {"remote_adjoint_source_directory", "iteration_name",
                 "hpc_agere_fwd_job_id"}
 
     def check_pre_staging(self):
@@ -25,9 +25,9 @@ class AdjointSimulation(task.Task):
 
         # Make sure the model directory exists.
         existing_models = self.remote_listdir(self.remote_model_directory)
-        assert self.inputs["model_name"] in existing_models, (
+        assert self.model_name in existing_models, (
             "Model '%s' does not exist on the HPC" % (
-                self.inputs["model_name"]))
+                self.model_name))
 
         # Backwards id is forwards id with "_bw" suffix.
         self.hpc_agere_bwd_job_id = \
@@ -86,8 +86,8 @@ class AdjointSimulation(task.Task):
         # Send a push notification.
         push_notifications.send_notification(
             title="Launched Adjoint Simulation!",
-            message="Adjoint simulation for model %s" %
-                    self.inputs["model_name"])
+            message="Adjoint simulation for iteration %s" %
+                self.inputs["iteration_name"])
 
         # Check if job is done all two minutes.
         while True:
@@ -123,8 +123,8 @@ class AdjointSimulation(task.Task):
                 # Send a push notification.
                 push_notifications.send_notification(
                     title="Finished Adjoint Simulation!",
-                    message="Done with adjoint simulation for model %s" %
-                            self.inputs["model_name"])
+                    message="Done with adjoint simulation for iteration %s" %
+                            self.inputs["iteration_name"])
                 break
 
     def check_post_run(self):
@@ -135,7 +135,7 @@ class AdjointSimulation(task.Task):
     def generate_next_steps(self):
         next_steps = [
             # Tar the waveforms.
-            {"task_type": "CopyGradientsFromHPC",
+            {"task_type": "SumGradientsOnHPC",
              "inputs": {
                  "hpc_agere_bwd_job_id": self.hpc_agere_bwd_job_id
              },

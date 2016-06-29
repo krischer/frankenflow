@@ -29,8 +29,6 @@ class CopyModelToHPC(task.Task):
             self.context["config"]["hpc_agere_project"],
             "__MODELS")
 
-        self.model_name = os.path.basename(self.binary_model_path)
-
         # Make sure this directory exists but does not have the model yet.
         if "__MODELS" not in self.remote_listdir(
                 self.context["config"]["hpc_agere_project"]):
