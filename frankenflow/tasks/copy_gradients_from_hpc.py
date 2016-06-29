@@ -10,25 +10,19 @@ class CopyGradientsFromHPC(task.Task):
     """
     @property
     def required_inputs(self):
-        return {"hpc_agere_bwd_job_id"}
+        return {"summed_kernel_directory"}
 
     def check_pre_staging(self):
-        raise Exception
-        c = self.context["config"]
-
         self._init_ssh_and_stfp_clients()
-
-        self.hpc_kernel_directory = os.path.join(
-            self.c["hpc_agere_project"], "__KERNELS",
-            self.inputs["hpc_agere_bwd_job_id"])
 
         self.local_kernel_directory = os.path.join(
             self.working_dir, "KERNELS")
 
         # Make sure the kernels exist on the HPC.
-        kernel_folder = self.remote_listdir(self.hpc_kernel_directory)
-        assert len(kernel_folder) == c["number_of_events"], \
-            "Run should have resulted in '%s' kernels." % c["number_of_events"]
+        self.kernel_files = self.remote_listdir(
+            self.inputs["summed_kernel_directory"])
+        assert len(self.kernel_files) >= 4, \
+            "At least 4 kernel files should be available"
 
         # But not yet on the local machine.
         assert not os.path.exists(self.local_kernel_directory), \
@@ -43,27 +37,24 @@ class CopyGradientsFromHPC(task.Task):
     def run(self):
         cmd = ["rsync", "-aP",
                "%s:%s/" % (self.c["hpc_remote_host"],
-                           self.hpc_kernel_directory),
+                           self.inputs["summed_kernel_directory"]),
                self.local_kernel_directory]
 
         retcode = self._run_external_script(cwd=".", cmd=cmd)
         assert retcode == 0, "rsync encountered an error."
 
     def check_post_run(self):
-        c = self.context["config"]
-
         # Make sure the kernels have been copied.
         kernel_folder = os.listdir(self.local_kernel_directory)
-        assert len(kernel_folder) == c["number_of_events"], \
-            "Run should have resulted in '%s' kernels being copied" % c[
-                "number_of_events"]
+        assert set(self.kernel_files) == set(kernel_folder), \
+            "Not all kernel files where copied successfully."
 
     def generate_next_steps(self):
         next_steps = [
             # Sum the gradients.
-            {"task_type": "SumGradients",
+            {"task_type": "ConvertGradientsToHDF5",
              "inputs": {
-                 "local_kernel_directory": self.local_kernel_directory
+                 "local_binary_gradient_directory": self.local_kernel_directory
              },
              "priority": 0
              }

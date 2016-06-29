@@ -41,7 +41,9 @@ class FlowManager():
             "misfits": os.path.join(output_folder, "misfits"),
             # Store all the seismopt next files.
             "seismopt_next_files": os.path.join(output_folder,
-                                                "seismopt_next_files")
+                                                "seismopt_next_files"),
+            "hdf5_gradient_files": os.path.join(
+                output_folder, "hdf5_gradient_files")
         }
 
         for folder in self.output_folders.values():
