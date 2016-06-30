@@ -18,10 +18,13 @@ class Orchestrate(task.Task):
 
     @property
     def required_inputs(self):
-        return {"current_goal"}
+        pass
 
     def check_pre_staging(self):
-        self.current_goal = self.inputs["current_goal"]
+        if "current_goal" in self.inputs:
+            self.current_goal = self.inputs["current_goal"]
+        else:
+            self.current_goal = None
 
     def stage_data(self):
         pass
@@ -33,8 +36,10 @@ class Orchestrate(task.Task):
         # If no current goal is set, evaluate the result of seismopt and act
         # accordingly.
         if self.current_goal is None:
-            self.steer_with_seismopt()
+            self.setup_seismopt()
             return
+        else:
+            raise NotImplementedError
 
         goal_type, iteration_name = self.current_goal.split()
 
@@ -101,64 +106,69 @@ class Orchestrate(task.Task):
 
         return contents
 
-    def steer_with_seismopt(self):
+    def setup_seismopt(self):
         """
-        This function is only called when no current goal is set.
+        This function is called when no goal yet exists -  it will setup the
+        directory structure for seismopt and call it for the first time.
         """
-        self.store_opt_next_file()
+        opt_dir = self.c["seismopt_dir"]
+        assert os.path.exists(opt_dir), "Optimization directory does not exist"
+        assert not os.path.listdir(opt_dir), "Optimization directory '%s' " \
+            "must be empty!" % opt_dir
 
-        contents = self.parse_current_seismopt_file()
+        # This only requires a couple of things: The model, the seismopt
+        # executable and two config files.
+        _i = self.c["data"]["input_folder"]
+        model_file = os.path.join(_i, "000_model.h5")
+        assert os.path.exists(model_file)
 
-        task = contents["task"]
+        executable = os.path.join(_i, "optlib.exe")
+        assert os.path.exists(executable)
 
-        # In both cases the next step is to calculate the misfit.
-        if task in ("misfit", "misfit_and_gradient"):
-            # Make sure all the model files exist.
-            model_file_map = {
-                contents["prefix"] + "_rho": "x_rho",
-                contents["prefix"] + "_vp": "x_vp",
-                contents["prefix"] + "_vsh": "x_vsh",
-                contents["prefix"] + "_vsv": "x_vsv"}
+        for _i in [model_file, executable]:
+            shutil.copy2(i, os.path.join(opt_dir, os.path.basename(_i)))
 
-            # The target, a.k.a model folder.
-            target_folder = os.path.join(self.context["optimization_dir"],
-                                         contents["model_name"])
-            assert not os.path.exists(target_folder), \
-                "Folder '%s' already exists." % target_folder
+        # Generate the config files.
+        ses3d_cfg = [
+            "[data_fields]",
+            "field = rho",
+            "field = vp",
+            "field = vsv",
+            "field = vsh",
+            "",
+            "[prefix]",
+            "model = model",
+            "misfit = misfit",
+            "gradient = gradient",
+            "search_direction = s",
+            "tmp_model = model_n",
+            "",
+            "[smoothing]"
+            "sigma_theta = %.8f" % self.c["config"]["sigma_theta"],
+            "sigma_phi = %.8f" % self.c["config"]["sigma_phi"],
+            "sigma_r = %.8f" % self.c["config"]["sigma_r"]
+        ]
+        with open(os.path.join(opt_dir, "ses3d.cfg"), "wt") as fh:
+            fh.write("\n".join(ses3d_cfg))
 
-            # Make sure all models files exist.
-            for filename in model_file_map.keys():
-                filename = os.path.join(contents["folder"], filename)
-                assert os.path.exists(filename), "'%s' does not exist." % \
-                    filename
+        opt_settings = [
+            "<opt_settings>",
+            "    <path_to_initial_model>000_model</path_to_initial_model>",
+            "    <working_directory>.</working_directory>",
+            "    <max_relative_model_change>%f""</max_relative_model_change>" %
+            self.c["config"]["max_relative_model_change"],
+            "</opt_settings>"
+        ]
+        with open(os.path.join(opt_dir, "opt_settings.xml"), "wt") as fh:
+            fh.write("\n".join(opt_settings))
 
-            # Good to go. Copy model, set new goal, and next steps and off
-            # we go!
-            os.makedirs(target_folder)
-
-            for src, target in model_file_map.items():
-                src = os.path.join(contents["folder"], src)
-                target = os.path.join(target_folder, target)
-                shutil.copy2(src, target)
-
-            self.new_goal = "%s %s" % (task, contents["model_name"])
-            self.next_steps = [
-                {"task_type": "ProjectModel",
-                 "inputs": {"regular_model_folder": target_folder},
-                 "priority": 0
-                },
-                # Add a job to plot the starting model at a higher priority.
-                {"task_type": "PlotRegularGridModel",
-                 "inputs": {"regular_model_folder": target_folder},
-                 "priority": 1,
-                }
-            ]
-            return
-        elif task == "gradient":
-            self.launch_adjoint_source_calculation()
-            self.new_goal = "gradient %s" % self.inputs["model_name"]
-        else:
-            raise NotImplementedError
+        # Now run seismopt for the first time.
+        self.next_steps = [
+            {"task_type": "RunSeismOpt",
+             "inputs": {},
+             "priority": 0
+            }
+        ]
 
     def launch_adjoint_source_calculation(self):
         # Make sure the forward run is part of the inputs.

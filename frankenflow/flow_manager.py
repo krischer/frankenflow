@@ -28,7 +28,9 @@ class FlowManager():
                                              "__OPTIMIZATION")
         os.makedirs(self.optimization_dir, exist_ok=True)
 
-        self.seismopt_dir = os.path.join(self.base_folder, "seismopt")
+        self.seismopt_dir = os.path.join(self.base_folder,
+                                         "__SEISMOPT_RUN_DIR")
+        os.makedirs(self.seismopt_dir, exist_ok=True)
 
         # Folders to collect the output.
         output_folder = os.path.join(self.base_folder, "__OUTPUT")
@@ -277,31 +279,17 @@ class FlowManager():
         Create the first job which is then used to trigger the rest of the
         workflow. Each step will always triggers its next step.
         """
-        initial_iteration = "000"
-
         # Add a start node that does not do anything.
         job_id, start = self.graph.add_job(task_type="Start", inputs={})
         start["job_status"] = "success"
 
         # Add a project model task at the default priority.
         self.graph.add_job(
-            task_type="ConvertModelToBinary",
-            inputs={"iteration_name": initial_iteration},
-            from_node=job_id
-        )
-
-        # Add a job to plot the starting model at a higher priority.
-        self.graph.add_job(
-            task_type="PlotHDF5Model",
-            inputs={"iteration_name": initial_iteration},
-            priority=1,
+            task_type="Orchestrate",
             from_node=job_id
         )
 
         self.graph.serialize()
-
-        # Set the current goal to calculate the misfit for model 000_1_model
-        self.status["current_goal"] = "misfit 000"
 
     def __check_data_files(self):
         # A couple of files are needed.
