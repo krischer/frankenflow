@@ -37,6 +37,11 @@ class Config():
         self._assert_var_exists("walltime_per_event_forward", var_type=float)
         self._assert_var_exists("walltime_per_event_adjoint", var_type=float)
 
+        # Smoothing parameters.
+        self._assert_var_exists("smoothing_theta", var_type=float)
+        self._assert_var_exists("smoothing_phi", var_type=float)
+        self._assert_var_exists("smoothing_r", var_type=float)
+
 
     def _assert_var_exists(self, key, var_type=None):
         assert key in self.config, \

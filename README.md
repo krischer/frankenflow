@@ -92,6 +92,10 @@ Some of this might seem awkward but that's just how it is right now.
 	"lasif_cmd": "/Users/lion/.miniconda3/envs/lasif/bin/lasif",
 	"lasif_project": "/Users/lion/temp/flow_hdf5/LASIF_Project",
 
+	"smoothing_theta": 0.01,
+	"smoothing_phi": 0.01,
+	"smoothing_r": 0.01,
+
 	"hpc_remote_host": "localhost",
 	"hpc_agere_project": "/Users/lion/temp/yea/SES3D_CTRL_WORKING_DIR",
 	"hpc_remote_input_files_directory": "/Users/lion/temp/yea/SES3D_CTRL_WORKING_DIR/input_files",
@@ -112,11 +116,17 @@ With the following meaning:
 * `agere_cmd`: The full path to the `agere` executable on the local machine.
 * `lasif_cmd`: The full path to the `lasif` executable on the local machine.
 * `lasif_project`: The full path to the `LASIF` project on the local machine. A lot of disc space should be available.
+
+* `smoothing_theta": Smoothing in theta direction (colatitude in radian).
+* `smoothing_phi": Smoothing in phi direction (longitude in radian).
+* `smoothing_r": Smoothing in r direction (depth in 1000 km).
+
 * `hpc_remote_host`: The name of the HPC host. Use `~/.ssh/config` to set everything up.
 * `hpc_agere_project`: The `ses3d_ctrl` working directory on the HPC.
 * `hpc_remote_input_files_directory`: A folder with input files for the inversion, already on the HPC.
 * `hpc_agere_cmd`:  The full path to the `agere` executable on the HPC machine.
 * `hpc_adjoint_source_folder`: The folder where adjoint source are stored on the HPC machine.
+
 * `number_of_events`: The total number of events in the current inversion as a safety mechanism.
 * `forward_wavefield_storage_degree`: The degree at which to store the forward wavefield. 2 is a good number.
 * `parallel_events`: The number of events that are simulated in parallel.
