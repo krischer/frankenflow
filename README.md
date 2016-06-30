@@ -95,6 +95,8 @@ Some of this might seem awkward but that's just how it is right now.
 	"smoothing_theta": 0.01,
 	"smoothing_phi": 0.01,
 	"smoothing_r": 0.01,
+    
+	"max_relative_model_change": 0.03,
 
 	"hpc_remote_host": "localhost",
 	"hpc_agere_project": "/Users/lion/temp/yea/SES3D_CTRL_WORKING_DIR",
@@ -120,6 +122,8 @@ With the following meaning:
 * `smoothing_theta": Smoothing in theta direction (colatitude in radian).
 * `smoothing_phi": Smoothing in phi direction (longitude in radian).
 * `smoothing_r": Smoothing in r direction (depth in 1000 km).
+
+* `max_relative_model_change`: The maximum relative change in the model per iteration. Usually only matters for the very first iteration.
 
 * `hpc_remote_host`: The name of the HPC host. Use `~/.ssh/config` to set everything up.
 * `hpc_agere_project`: The `ses3d_ctrl` working directory on the HPC.

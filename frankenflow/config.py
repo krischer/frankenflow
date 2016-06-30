@@ -42,6 +42,10 @@ class Config():
         self._assert_var_exists("smoothing_phi", var_type=float)
         self._assert_var_exists("smoothing_r", var_type=float)
 
+        # Max relative model change
+        self._assert_var_exists("max_relative_model_change", var_type=float)
+
+
 
     def _assert_var_exists(self, key, var_type=None):
         assert key in self.config, \
