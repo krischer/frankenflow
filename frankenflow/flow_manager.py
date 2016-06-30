@@ -309,7 +309,8 @@ class FlowManager():
         os.makedirs(self.data_folder, exist_ok=True)
 
         required_files = {
-            "000_model.h5": "Initial Model"
+            "000_model.h5": "initial model",
+            "optlib.exe": "seismopt executable"
         }
 
         for filename, description in required_files.items():
@@ -318,7 +319,7 @@ class FlowManager():
             if not os.path.exists(filename):
                 raise ValueError(
                     "File '%s' must exists before we can start. Description "
-                    "of the file: %s" % (filename, description))
+                    "of the file: '%s'" % (filename, description))
 
         self.data = {}
         self.data["input_folder"] = os.path.join(self.data_folder,
