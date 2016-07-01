@@ -191,14 +191,6 @@ class FlowManager():
                                 priority=prio,
                                 from_node=job_id)
 
-                    print("==================")
-                    print("==================")
-                    print("==================")
-                    import pprint
-                    pprint.pprint(return_value)
-                    print("==================")
-                    print("==================")
-                    print("==================")
                     if "new_goal" in return_value:
                         self.status["current_goal"] = return_value["new_goal"]
 

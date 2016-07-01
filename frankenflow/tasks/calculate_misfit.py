@@ -71,7 +71,7 @@ class CalculateMisfit(task.Task):
             self.context, self.context["output_folders"]["misfits"])
 
         for key, value in self.misfits.items():
-            filename = os.path.join(misfit_folder, "iteration_%s.txt" % key)
+            filename = os.path.join(misfit_folder, "%s.txt" % key)
 
             if os.path.exists(filename):
                 if key != "000":

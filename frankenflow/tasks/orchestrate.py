@@ -61,18 +61,20 @@ class Orchestrate(task.Task):
                 self.setup_seismopt()
             return
         else:
-            raise NotImplementedError
-
-        goal_type, iteration_name = self.current_goal.split()
-
-        if goal_type == "misfit":
-            self.misfit_goal(iteration_name)
-        elif goal_type == "gradient":
-            self.gradient_goal(iteration_name)
-        elif goal_type == "misfit_and_gradient":
-            self.misfit_and_gradient_goal(iteration_name)
-        else:
-            raise NotImplementedError
+            goal_type, iteration_name = self.current_goal.split()
+            if goal_type == "misfit":
+                self.misfit_and_gradient_goal()
+            else:
+                print("================")
+                print("================")
+                print("================")
+                print("================")
+                print(goal_type, iteration_name)
+                print("================")
+                print("================")
+                print("================")
+                print("================")
+                raise NotImplementedError
 
     def get_misfit_file(self, model_name):
         return os.path.join(

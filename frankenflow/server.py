@@ -41,13 +41,12 @@ def status():
 @app.route("/misfits")
 def misfits():
     misfit_folder = app.flow_manager.info["output_folders"]["misfits"]
-    files = glob.glob(os.path.join(misfit_folder, "iteration_*.txt"))
+    files = glob.glob(os.path.join(misfit_folder, "*.txt"))
 
     misfits = []
 
     for filename in files:
-        name = re.sub(r"^iteration_", "", os.path.basename(filename))
-        name = re.sub(r"\.txt$", "", name)
+        name = re.sub(r"\.txt$", "", os.path.basename(filename))
         with open(filename, "rt") as fh:
             misfit = float(fh.read())
 
