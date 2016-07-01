@@ -128,7 +128,7 @@ class Orchestrate(task.Task):
         # If the misfit does not exists, calculate it, start by converting
         # the model to the binary format.
         if not misfit_exists:
-            self.new_goal = "misfit_and_gradient %s" % iteration_name,
+            self.new_goal = "misfit %s" % iteration_name
             self.next_steps = [
                 {
                     "task_type": "ConvertModelToBinary",
@@ -423,7 +423,12 @@ class Orchestrate(task.Task):
                 os.path.join(dest_folder, dest))
 
     def check_post_run(self):
-        pass
+        try:
+            if self.new_goal:
+                return {"new_goal": self.new_goal}
+            return {}
+        except:
+            return {}
 
     def generate_next_steps(self):
         return self.next_steps

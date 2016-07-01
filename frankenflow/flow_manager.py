@@ -132,7 +132,6 @@ class FlowManager():
         if len(self.graph) == 0:
             self.create_initial_job()
 
-
         assert len(self.graph) != 0, "The graph must not be empty!"
 
         try:
@@ -192,6 +191,14 @@ class FlowManager():
                                 priority=prio,
                                 from_node=job_id)
 
+                    print("==================")
+                    print("==================")
+                    print("==================")
+                    import pprint
+                    pprint.pprint(return_value)
+                    print("==================")
+                    print("==================")
+                    print("==================")
                     if "new_goal" in return_value:
                         self.status["current_goal"] = return_value["new_goal"]
 

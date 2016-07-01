@@ -90,8 +90,10 @@ def graph():
     for node in json_graph["nodes"]:
       if node["_meta"]["job_status"] == "success":
         node["color"] = "green"
-        # Only color successful nodes.
-        if node["label"] in ("Start", "Orchestrate"):
+
+        if node["label"] == "Start":
+            node["color"] = "#D0A9F5"
+        elif node["label"] == "Orchestrate":
             node["color"] = "white"
 
       elif node["_meta"]["job_status"] == "failed":
