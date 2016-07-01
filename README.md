@@ -92,9 +92,9 @@ Some of this might seem awkward but that's just how it is right now.
 	"lasif_cmd": "/Users/lion/.miniconda3/envs/lasif/bin/lasif",
 	"lasif_project": "/Users/lion/temp/flow_hdf5/LASIF_Project",
 
-	"smoothing_theta": 0.01,
-	"smoothing_phi": 0.01,
-	"smoothing_r": 0.01,
+	"sigma_theta": 0.01,
+	"sigma_phi": 0.01,
+	"sigma_r": 0.01,
     
 	"max_relative_model_change": 0.03,
 
@@ -119,9 +119,9 @@ With the following meaning:
 * `lasif_cmd`: The full path to the `lasif` executable on the local machine.
 * `lasif_project`: The full path to the `LASIF` project on the local machine. A lot of disc space should be available.
 
-* `smoothing_theta": Smoothing in theta direction (colatitude in radian).
-* `smoothing_phi": Smoothing in phi direction (longitude in radian).
-* `smoothing_r": Smoothing in r direction (depth in 1000 km).
+* `sigma_theta": Gaussian smoothing sigma in theta direction (colatitude in radian).
+* `sigma_phi": Gaussian smoothing sigma in phi direction (longitude in radian).
+* `sigma_r": Gaussian smoothing sigma in r direction (depth in 1000 km).
 
 * `max_relative_model_change`: The maximum relative change in the model per iteration. Usually only matters for the very first iteration.
 

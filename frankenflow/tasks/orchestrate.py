@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import re
 import shutil
@@ -18,7 +19,7 @@ class Orchestrate(task.Task):
 
     @property
     def required_inputs(self):
-        pass
+        return set()
 
     def check_pre_staging(self):
         if "current_goal" in self.inputs:
@@ -32,11 +33,32 @@ class Orchestrate(task.Task):
     def check_post_staging(self):
         pass
 
+    @property
+    def seismopt_file(self):
+        seismopt_next_file = os.path.join(
+            self.context["seismopt_dir"], "seismopt.json")
+        assert os.path.exists(seismopt_next_file), \
+            "'%s' does not exist." % seismopt_next_file
+        with open(seismopt_next_file, "rt") as fh:
+            status = json.load(fh)
+        status["_meta"]["iteration"] = int(status["_meta"]["iteration"])
+        return status
+
     def run(self):
-        # If no current goal is set, evaluate the result of seismopt and act
-        # accordingly.
+        # Having no current goal can be the result of two different things:
+        #
+        # 1. It is the very start of an inversion. In that case run seismopt.
+        # 2. Seismopt did run the first time - in that case parse the
+        #    seismopt file and set the next steps accordingly.
         if self.current_goal is None:
-            self.setup_seismopt()
+            try:
+                status = self.seismopt_file
+                if status["next_task"]["task_type"] != \
+                        "calculate_misfit_and_gradient":
+                    raise NotImplementedError
+                self.misfit_and_gradient_goal()
+            except AssertionError:
+                self.setup_seismopt()
             return
         else:
             raise NotImplementedError
@@ -52,73 +74,86 @@ class Orchestrate(task.Task):
         else:
             raise NotImplementedError
 
-    @property
-    def seismopt_next(self):
-        seismopt_next_file = os.path.join(
-            self.context["seismopt_dir"], "opt.next")
-        assert os.path.exists(seismopt_next_file), \
-            "'%s' does not exist." % seismopt_next_file
-        return seismopt_next_file
+    def get_misfit_file(self, model_name):
+        return os.path.join(
+            self.context["output_folders"]["misfits"],
+            "%s.txt" % model_name)
 
-    def parse_current_seismopt_file(self):
-        with open(self.seismopt_next, "rt") as fh:
-            line_1 = fh.readline().strip()
-            line_2 = fh.readline().strip()
+    def get_model_file(self, model_name):
+        return os.path.join(
+            self.context["output_folders"]["hdf5_models"],
+            "%s.h5" % model_name)
 
-        prog, task, iteration, prefix = line_2.split()
+    def get_gradient_file(self, model_name):
+        return os.path.join(
+            self.context["output_folders"]["hdf5_gradients"],
+            "gradient_%s.h5" % model_name)
 
-        # Folder with all the things.
-        folder = os.path.normpath(os.path.join(self.context["seismopt_dir"],
-                                               iteration))
-        number = re.findall("\d+", iteration)[0]
+    def misfit_and_gradient_goal(self):
+        status = self.seismopt_file
 
-        assert prog == "run_ses3d"
+        # Get the iteration name.
+        iteration_name = "%03i" % status["_meta"]["iteration"]
+        if "step_length" in status["_meta"]:
+            iteration_name += \
+                "_step_length_%.9f" % status["_meta"]["step_length"]
 
-        contents = {
-            "task": task,
-            "iteration": os.path.normpath(iteration),
-            "prefix": prefix,
-            "folder": folder,
-            "number": number
-        }
+        # Get the model name.
+        model_name = "%s_model" % iteration_name
 
-        if task == "misfit":
-            # If the misfit is requested, the desired step length has to be
-            # given.
-            assert "test step length" in line_1
-            # Step length
-            step_length = float(line_1.split()[-1])
-            contents["step_length"] = step_length
+        # Check if the gradient already exists.
+        gradient_exists = os.path.exists(self.get_gradient_file(model_name))
+        # Check if the misfit already exists.
+        misfit_exists = os.path.exists(self.get_misfit_file(model_name))
 
-            model_name = "%s_model_steplength_%g" % (number, step_length)
-            contents["model_name"] = model_name
+        # If only the gradient or both already exist then something is wrong.
+        if not misfit_exists and gradient_exists:
+            raise NotImplementedError("Only the gradient exists!")
+        if misfit_exists and gradient_exists:
+            raise NotImplementedError("Misfit and gradient already exist.")
 
-        elif task == "misfit_and_gradient":
-            # If the misfit is requested, the desired step length has to be
-            # given.
-            assert "test step length" in line_1
-            # Step length
-            step_length = float(line_1.split()[-1])
-            contents["step_length"] = step_length
+        # Now, no matter what, the model files has to exist, otherwise it
+        # has to be copied from the seismopt directory.
+        model_file = self.get_model_file(model_name)
+        if not os.path.exists(model_file):
+            nt = status["next_task"]
+            # Get the model from seismopt.
+            filename = os.path.join(
+                self.context["seismopt_dir"], nt["folder"].strip("./"),
+                nt["prefix"] + os.extsep + "h5")
+            assert os.path.exists(filename)
+            shutil.copy2(filename, model_file)
+        assert os.path.exists(model_file)
 
-            model_name = "%s_model_steplength_%g" % (number, step_length)
-            contents["model_name"] = model_name
-
-        return contents
+        # If the misfit does not exists, calculate it, start by converting
+        # the model to the binary format.
+        if not misfit_exists:
+            self.new_goal = "misfit_and_gradient %s" % iteration_name,
+            self.next_steps = [
+                {
+                    "task_type": "ConvertModelToBinary",
+                    "inputs": {"iteration_name": iteration_name},
+                    "priority": 1
+                }
+            ]
+        elif not gradient_exists:
+            self.launch_adjoint_source_calculation()
+        else:
+            raise NotImplementedError
 
     def setup_seismopt(self):
         """
         This function is called when no goal yet exists -  it will setup the
         directory structure for seismopt and call it for the first time.
         """
-        opt_dir = self.c["seismopt_dir"]
+        opt_dir = self.context["seismopt_dir"]
         assert os.path.exists(opt_dir), "Optimization directory does not exist"
-        assert not os.path.listdir(opt_dir), "Optimization directory '%s' " \
+        assert not os.listdir(opt_dir), "Optimization directory '%s' " \
             "must be empty!" % opt_dir
 
         # This only requires a couple of things: The model, the seismopt
         # executable and two config files.
-        _i = self.c["data"]["input_folder"]
+        _i = self.context["data_folder"]
         model_file = os.path.join(_i, "000_model.h5")
         assert os.path.exists(model_file)
 
@@ -126,7 +161,7 @@ class Orchestrate(task.Task):
         assert os.path.exists(executable)
 
         for _i in [model_file, executable]:
-            shutil.copy2(i, os.path.join(opt_dir, os.path.basename(_i)))
+            shutil.copy2(_i, os.path.join(opt_dir, os.path.basename(_i)))
 
         # Generate the config files.
         ses3d_cfg = [
@@ -143,10 +178,10 @@ class Orchestrate(task.Task):
             "search_direction = s",
             "tmp_model = model_n",
             "",
-            "[smoothing]"
-            "sigma_theta = %.8f" % self.c["config"]["sigma_theta"],
-            "sigma_phi = %.8f" % self.c["config"]["sigma_phi"],
-            "sigma_r = %.8f" % self.c["config"]["sigma_r"]
+            "[smoothing]",
+            "sigma_theta = %.8f" % self.c["sigma_theta"],
+            "sigma_phi = %.8f" % self.c["sigma_phi"],
+            "sigma_r = %.8f" % self.c["sigma_r"]
         ]
         with open(os.path.join(opt_dir, "ses3d.cfg"), "wt") as fh:
             fh.write("\n".join(ses3d_cfg))
@@ -156,7 +191,7 @@ class Orchestrate(task.Task):
             "    <path_to_initial_model>000_model</path_to_initial_model>",
             "    <working_directory>.</working_directory>",
             "    <max_relative_model_change>%f""</max_relative_model_change>" %
-            self.c["config"]["max_relative_model_change"],
+            self.c["max_relative_model_change"],
             "</opt_settings>"
         ]
         with open(os.path.join(opt_dir, "opt_settings.xml"), "wt") as fh:
@@ -183,33 +218,6 @@ class Orchestrate(task.Task):
             },
             "priority": 0
         }]
-
-    def misfit_and_gradient_goal(self, model):
-        # This function can be entered at two seperate points in time. Once
-        # after the misfit calculation and once after the gradient
-        # calculation.
-
-        # We first determine if the misfit has been calculated. That MUST
-        # always be the case.
-        misfit_file = self.get_misfit_file(model)
-        assert os.path.exists(misfit_file), "Misfit must always exist!"
-
-
-        # Let's figure out if the gradient folder exists.
-        gradient_name = model.replace("_model_", "_gradient_")
-
-        gradient_folder = os.path.join(
-            self.context["optimization_dir"], gradient_name)
-
-        # If it does not exist, initialize jobs to create it.
-        if not os.path.exists(gradient_folder):
-            self.launch_adjoint_source_calculation()
-            self.new_goal = self.current_goal
-
-        else:
-            # Otherwise do the normal thing that is done after a gradient
-            # has been calculated.
-            self.gradient_goal(model)
 
     def store_opt_next_file(self):
         """
@@ -288,7 +296,6 @@ class Orchestrate(task.Task):
                 "priority": 0
             }]
 
-            self.new_goal = None
 
             return
 
@@ -317,7 +324,6 @@ class Orchestrate(task.Task):
                 "priority": 0
             }]
 
-            self.new_goal = None
         else:
             gradient = model.replace("_model_", "_gradient_")
             contents = self.parse_current_seismopt_file()
@@ -346,12 +352,6 @@ class Orchestrate(task.Task):
                 "priority": 0
             }]
 
-            self.new_goal = None
-
-    def get_misfit_file(self, model_name):
-        return os.path.join(
-            self.context["output_folders"]["misfits"],
-            "iteration_%s.txt" % model_name)
 
     def write_misfit_to_opt(self, iteration, prefix, model_name):
         # Read the misfit.
@@ -423,9 +423,7 @@ class Orchestrate(task.Task):
                 os.path.join(dest_folder, dest))
 
     def check_post_run(self):
-        return {
-            "new_goal": self.new_goal
-        }
+        pass
 
     def generate_next_steps(self):
         return self.next_steps

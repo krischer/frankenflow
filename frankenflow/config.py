@@ -38,9 +38,9 @@ class Config():
         self._assert_var_exists("walltime_per_event_adjoint", var_type=float)
 
         # Smoothing parameters.
-        self._assert_var_exists("smoothing_theta", var_type=float)
-        self._assert_var_exists("smoothing_phi", var_type=float)
-        self._assert_var_exists("smoothing_r", var_type=float)
+        self._assert_var_exists("sigma_theta", var_type=float)
+        self._assert_var_exists("sigma_phi", var_type=float)
+        self._assert_var_exists("sigma_r", var_type=float)
 
         # Max relative model change
         self._assert_var_exists("max_relative_model_change", var_type=float)

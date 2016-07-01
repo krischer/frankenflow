@@ -36,16 +36,24 @@ class FlowManager():
         output_folder = os.path.join(self.base_folder, "__OUTPUT")
 
         self.output_folders = {
-            "hdf5_models": os.path.join(output_folder, "hdf5_models"),
-            "ses3d_format_models": os.path.join(output_folder,
-                                                "ses3d_format_models"),
+
+            # Various plots.
+            "hdf5_model_plots":
+                os.path.join(output_folder, "hdf5_model_plots"),
+            "ses3d_format_model_plots":
+                os.path.join(output_folder, "ses3d_format_model_plots"),
+            "gradient_plots":
+                os.path.join(output_folder, "gradient_plots"),
+
             # Collect all the misfits in simple text files.
             "misfits": os.path.join(output_folder, "misfits"),
-            # Store all the seismopt next files.
-            "seismopt_next_files": os.path.join(output_folder,
-                                                "seismopt_next_files"),
-            "hdf5_gradient_files": os.path.join(
-                output_folder, "hdf5_gradient_files")
+            # Store all the seismopt steering files.
+            "seismopt_files":
+                os.path.join(output_folder, "seismopt_next_files"),
+            "hdf5_gradients":
+                os.path.join(output_folder, "hdf5_gradients"),
+            "hdf5_models":
+                os.path.join(output_folder, "hdf5_models")
         }
 
         for folder in self.output_folders.values():
@@ -260,8 +268,9 @@ class FlowManager():
         # The orchestrate node is special. It does require information about
         # the current goal to be able to deduce the next.
         if job_information["task_type"] == "Orchestrate":
-            job_information["inputs"]["current_goal"] = \
-                self.current_status["goal"]
+            if self.current_status and "goal" in self.current_status:
+                job_information["inputs"]["current_goal"] = \
+                    self.current_status["goal"]
 
         result = celery_tasks.launch_job.delay(job_information,
                                                context=self.info)
@@ -286,6 +295,7 @@ class FlowManager():
         # Add a project model task at the default priority.
         self.graph.add_job(
             task_type="Orchestrate",
+            inputs={},
             from_node=job_id
         )
 

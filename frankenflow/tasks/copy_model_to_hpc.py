@@ -15,6 +15,7 @@ class CopyModelToHPC(task.Task):
         return {"iteration_name"}
 
     def check_pre_staging(self):
+        raise NotImplementedError
         # Make sure the folder does exist.
         assert os.path.exists(self.binary_model_path), \
             "'%s' does not exist" % self.binary_model_path

@@ -252,7 +252,8 @@ class Task(metaclass=abc.ABCMeta):
         "iteration_name" input.
         """
         model_filename = "%s_model.h5" % self.inputs["iteration_name"]
-        return os.path.join(self.context["data_folder"], model_filename)
+        return os.path.join(self.context["output_folders"]["hdf5_models"],
+                            model_filename)
 
     @property
     def binary_model_path(self):
