@@ -129,6 +129,14 @@ class Task(metaclass=abc.ABCMeta):
         return self.sftp_client.get(remotepath=remotepath,
                                     localpath=localpath)
 
+    @retry(5)
+    def remote_path_exists(self, path):
+        """
+        Check if the path exists on the remote machine.
+        """
+        contents = self.remote_listdir(os.path.dirname(path))
+        return os.path.basename(path) in contents
+
     def get_events(self):
         events = glob.glob(os.path.join(self.c["lasif_project"], "EVENTS",
                                         "*.xml"))
@@ -254,6 +262,21 @@ class Task(metaclass=abc.ABCMeta):
         model_filename = "%s_model.h5" % self.inputs["iteration_name"]
         return os.path.join(self.context["output_folders"]["hdf5_models"],
                             model_filename)
+
+    def get_misfit_file(self, iteration_name):
+        return os.path.join(
+            self.context["output_folders"]["misfits"],
+            "%s.txt" % iteration_name)
+
+    def get_model_file(self, iteration_name):
+        return os.path.join(
+            self.context["output_folders"]["hdf5_models"],
+            "%s_model.h5" % iteration_name)
+
+    def get_gradient_file(self, iteration_name):
+        return os.path.join(
+            self.context["output_folders"]["hdf5_gradients"],
+            "%s_gradient.h5" % iteration_name)
 
     @property
     def binary_model_path(self):

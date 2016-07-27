@@ -76,21 +76,6 @@ class Orchestrate(task.Task):
                 print("================")
                 raise NotImplementedError
 
-    def get_misfit_file(self, model_name):
-        return os.path.join(
-            self.context["output_folders"]["misfits"],
-            "%s.txt" % model_name)
-
-    def get_model_file(self, model_name):
-        return os.path.join(
-            self.context["output_folders"]["hdf5_models"],
-            "%s.h5" % model_name)
-
-    def get_gradient_file(self, model_name):
-        return os.path.join(
-            self.context["output_folders"]["hdf5_gradients"],
-            "gradient_%s.h5" % model_name)
-
     def misfit_and_gradient_goal(self):
         status = self.seismopt_file
 
@@ -100,13 +85,11 @@ class Orchestrate(task.Task):
             iteration_name += \
                 "_step_length_%.9f" % status["_meta"]["step_length"]
 
-        # Get the model name.
-        model_name = "%s_model" % iteration_name
-
         # Check if the gradient already exists.
-        gradient_exists = os.path.exists(self.get_gradient_file(model_name))
+        gradient_exists = os.path.exists(self.get_gradient_file(
+            iteration_name))
         # Check if the misfit already exists.
-        misfit_exists = os.path.exists(self.get_misfit_file(model_name))
+        misfit_exists = os.path.exists(self.get_misfit_file(iteration_name))
 
         # If only the gradient or both already exist then something is wrong.
         if not misfit_exists and gradient_exists:
@@ -116,7 +99,7 @@ class Orchestrate(task.Task):
 
         # Now, no matter what, the model files has to exist, otherwise it
         # has to be copied from the seismopt directory.
-        model_file = self.get_model_file(model_name)
+        model_file = self.get_model_file(iteration_name)
         if not os.path.exists(model_file):
             nt = status["next_task"]
             # Get the model from seismopt.
@@ -139,6 +122,7 @@ class Orchestrate(task.Task):
                 }
             ]
         elif not gradient_exists:
+            self.new_goal = "gradient %s" % iteration_name
             self.launch_adjoint_source_calculation()
         else:
             raise NotImplementedError
@@ -210,12 +194,12 @@ class Orchestrate(task.Task):
     def launch_adjoint_source_calculation(self):
         # Make sure the forward run is part of the inputs.
         self._assert_input_exists("hpc_agere_fwd_job_id")
-        self._assert_input_exists("model_name")
+        self._assert_input_exists("iteration_name")
 
         self.next_steps = [{
             "task_type": "CalculateAdjointSources",
             "inputs": {
-                "model_name": self.inputs["model_name"],
+                "iteration_name": self.inputs["iteration_name"],
                 "hpc_agere_fwd_job_id": self.inputs["hpc_agere_fwd_job_id"]
             },
             "priority": 0

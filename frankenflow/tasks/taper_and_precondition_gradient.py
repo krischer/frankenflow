@@ -3,15 +3,22 @@ import os
 from . import task
 
 
-class SmoothAndPreconditionGradient(task.Task):
+class TaperAndPreconditionGradient(task.Task):
     """
-    Smoothes and preconditions a gradient.
+    Tapers and preconditions a gradient.
     """
     @property
     def required_inputs(self):
-        return {"projected_gradient_folder", "gradient_name"}
+        return {"iteration_name"}
 
     def check_pre_staging(self):
+        self.hdf5_gradient_filename = \
+            self.get_gradient_file(self.inputs["iteration_name"])
+
+        assert os.path.exists(self.hdf5_gradient_filename), \
+            "HDF5 gradient must exist!"
+
+        raise Exception
         assert os.path.exists(self.inputs["projected_gradient_folder"]), \
             "Directory '%s' does not exist." % self.inputs[
                 "projected_gradient_folder"]
@@ -55,11 +62,14 @@ class SmoothAndPreconditionGradient(task.Task):
 
     def generate_next_steps(self):
         next_steps = [
+            # Plot the processed gradient.
+            {"task_type": "PlotHDF5Gradient",
+             "inputs": {"tag": "tapered_and_preconditioned"},
+             "priority": 1
+             },
+            # Orchestrate.
             {"task_type": "Orchestrate",
              "priority": 0
-            },
-            {"task_type": "PlotRegularGridGradient",
-             "priority": 1
              }
         ]
         return next_steps

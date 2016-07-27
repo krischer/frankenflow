@@ -12,47 +12,62 @@ class ConvertGradientsToHDF5(task.Task):
         return {"local_binary_gradient_directory", "iteration_name"}
 
     def check_pre_staging(self):
-        raise Exception
         # Make sure the kernels have been copied.
         kernel_folder = os.listdir(
             self.inputs["local_binary_gradient_directory"])
         assert len(kernel_folder) > 4, "Binary gradient files to not exist."
 
-        self.local_hdf5_gradient_filename = \
-            os.path.join(self.working_dir, "gradient_%s.h5" %
-                         self.inputs["iteration_name"])
+        self.hdf5_gradient_filename = \
+            self.get_gradient_file(self.inputs["iteration_name"])
 
-        assert not os.path.exists(self.local_hdf5_gradient_filename), \
-            "'%s' does already exist" % self.local_hdf5_gradient_filename
+        assert not os.path.exists(self.hdf5_gradient_filename), \
+            "'%s' does already exist" % self.hdf5_gradient_filename
 
     def stage_data(self):
-        pass
+        # The gradient needs a boxfile. Just get it from the corresponding
+        # model which should always have one.
+        self.boxfile = os.path.join(
+            self.inputs["local_binary_gradient_directory"], "boxfile")
+        if os.path.exists(self.boxfile):
+            return
+        cmd = [
+            "h5dump",
+            "-d",
+            "_meta/boxfile",
+            "-b",
+            "-o",
+            self.boxfile,
+            self.hdf5_model_path]
+        self._run_external_script(cwd=".", cmd=cmd)
 
     def check_post_staging(self):
-        pass
+        assert os.path.exists(self.boxfile), \
+            "boxfile could not be extracted from the model for some reason."
 
     def run(self):
         cmd = [
             self.context["config"]["agere_cmd"],
-            "hdf5_model_to_binary",
-            self.hdf5_model_path,
-            self.binary_model_path]
+            "binary_model_to_hdf5",
+            self.c["lasif_project"],
+            self.inputs["local_binary_gradient_directory"],
+            self.hdf5_gradient_filename]
         self._run_external_script(cwd=".", cmd=cmd)
 
     def check_post_run(self):
         # Now it should exist.
-        assert os.path.exists(self.binary_model_path), \
-            "'%s' did not get created." % self.binary_model_path
+        assert os.path.exists(self.hdf5_gradient_filename), \
+            "'%s' did not get created." % self.hdf5_gradient_filename
 
     def generate_next_steps(self):
         next_steps = [
-            # Produce a plot of the projected model.
-            {"task_type": "PlotSES3DBinaryFormatModel",
+            # Plot the raw gradient.
+            {"task_type": "PlotHDF5Gradient",
+             "inputs": {"tag": "raw"},
              "priority": 1
              },
-            # Copy the model to the HPC.
-            {"task_type": "CopyModelToHPC",
-             "priority": 0
+            {"task_type": "TaperAndPreconditionGradient",
+             "inputs": {"tag": "raw"},
+             "priority": 1
              }
         ]
         return next_steps

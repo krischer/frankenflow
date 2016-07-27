@@ -53,6 +53,10 @@ class CopyAdjointSourcesToHPC(task.Task):
                 self.remote_adjoint_source_directory)
 
     def stage_data(self):
+        assert not self.remote_path_exists(
+            self.remote_adjoint_source_directory), (
+                "Remote adjoint source directory '%s' already exists." %
+                self.remote_adjoint_source_directory)
         self.remote_mkdir(self.remote_adjoint_source_directory)
 
     def check_post_staging(self):
