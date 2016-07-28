@@ -58,10 +58,10 @@ Additionally you must setup key based SSH authentication from the workstation to
 A couple of other tools are required. `LOCAL` means that it must be installed locally, `HPC` that it must be installed on the HPC.
 
 * `LASIF` (http://lasif.net) - `LOCAL` + `HPC` -  is used to for the data management and organizational part of the full waveform inversion. Additionally it performs the window selection and adjoint source calculation.
-* `SES3D` (MISSING LINK) - `HPC` - performs the numerical forward and adjoint simulations. `ses3d_ctrl`/`agere` (MISSING LINK) is responsible for compiling and running SES3D and moving things where they need to go.
-* `seismopt` (MISSING LINK) - `LOCAL` - performs and steers the numerical optimization with an L-BFGS algorihtm. 
+* `SES3D` ([link](https://www.ethz.ch/content/specialinterest/erdw/institute-geophysics/computational-seismology/en/software/ses3d.html)) - `HPC` - performs the numerical forward and adjoint simulations. `ses3d_ctrl`/`agere` (https://github.com/krischer/ses3d_ctrl) is responsible for compiling and running SES3D and moving things where they need to go.
+* `seismopt` (MISSING LINK - private repository!) - `LOCAL` - performs and steers the numerical optimization with an L-BFGS algorihtm. 
 * `frankenflow` - `LOCAL` - pipes all of these together to form a fully automatic system.
-* `ses3d_ctrl`/`agere` (MISSING LINK) - `LOCAL` + `HPC` - has to be configured to able to steer SES3D on the HPC.
+* `ses3d_ctrl`/`agere` (https://github.com/krischer/ses3d_ctrl) - `LOCAL` + `HPC` - has to be configured to able to steer SES3D on the HPC.
 
 
 ##### Push Notifications
@@ -95,21 +95,29 @@ Some of this might seem awkward but that's just how it is right now.
 	"sigma_theta": 0.01,
 	"sigma_phi": 0.01,
 	"sigma_r": 0.01,
-    
-	"max_relative_model_change": 0.03,
 
-	"hpc_remote_host": "localhost",
-	"hpc_agere_project": "/Users/lion/temp/yea/SES3D_CTRL_WORKING_DIR",
-	"hpc_remote_input_files_directory": "/Users/lion/temp/yea/SES3D_CTRL_WORKING_DIR/input_files",
-	"hpc_agere_cmd": "/Users/lion/.miniconda3/envs/lasif/bin/agere",
-	"hpc_adjoint_source_folder": "/Users/lion/temp/yea/SES3D_CTRL_WORKING_DIR/adjoint_sources",
+    "max_relative_model_change": 0.05,
+
+	"hpc_remote_host": "kochel",
+	"hpc_agere_project": "/export/data/krischer/SES3D_CTRL_CWD",
+	"hpc_remote_input_files_directory": "/export/data/krischer/SES3D_CTRL_CWD/input_files",
+
+	"hpc_agere_cmd": "/export/data/krischer/anaconda/envs/obspy_py27/bin/agere",
+	"hpc_adjoint_source_folder": "/export/data/krischer/SES3D_CTRL_CWD/adjoint_sources",
 
 	"number_of_events": 2,
 	"forward_wavefield_storage_degree": 2,
 	"parallel_events": 1,
 	"pml_count": 2,
 	"walltime_per_event_forward": 0.5,
-	"walltime_per_event_adjoint": 0.5
+	"walltime_per_event_adjoint": 0.5,
+
+    "taper_longitude_offset_in_km": 100.0,
+    "taper_colatitude_offset_in_km": 100.0,
+    "taper_depth_offset_in_km": 100.0,
+    "taper_longitude_width_in_km": 100.0,
+    "taper_colatitude_width_in_km": 100.0,
+    "taper_depth_width_in_km": 100.0
 }
 ```
 
@@ -119,9 +127,9 @@ With the following meaning:
 * `lasif_cmd`: The full path to the `lasif` executable on the local machine.
 * `lasif_project`: The full path to the `LASIF` project on the local machine. A lot of disc space should be available.
 
-* `sigma_theta": Gaussian smoothing sigma in theta direction (colatitude in radian).
-* `sigma_phi": Gaussian smoothing sigma in phi direction (longitude in radian).
-* `sigma_r": Gaussian smoothing sigma in r direction (depth in 1000 km).
+* `sigma_theta`: Gaussian smoothing sigma in theta direction (colatitude in radian).
+* `sigma_phi`: Gaussian smoothing sigma in phi direction (longitude in radian).
+* `sigma_r`: Gaussian smoothing sigma in r direction (depth in 1000 km).
 
 * `max_relative_model_change`: The maximum relative change in the model per iteration. Usually only matters for the very first iteration.
 
@@ -137,6 +145,13 @@ With the following meaning:
 * `pml_count`: The number of PML layers for the simulations. 3 is a good number.
 * `walltime_per_event_forward`: The walltime in hours for the forward simulations per event.
 * `walltime_per_event_adjoint`: The walltime in hours for the adjount simulations per event.
+
+* `taper_longitude_offset_in_km`: The kernel taper offset in longitude direction.
+* `taper_colatitude_offset_in_km`: The kernel taper offset in colatitude direction.
+* `taper_depth_offset_in_km`: The kernel taper offset in depth direction.
+* `taper_longitude_width_in_km`: The kernel taper width in longitude direction.
+* `taper_colatitude_width_in_km`: The kernel taper width in colatitude direction.
+* `taper_depth_width_in_km`: The kernel taper width in depth direction.
 
 
 The initial run directory of the inversion should look thus like this:

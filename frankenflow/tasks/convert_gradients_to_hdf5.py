@@ -62,11 +62,10 @@ class ConvertGradientsToHDF5(task.Task):
         next_steps = [
             # Plot the raw gradient.
             {"task_type": "PlotHDF5Gradient",
-             "inputs": {"tag": "raw"},
+             "inputs": {"tag": ""},
              "priority": 1
              },
             {"task_type": "TaperAndPreconditionGradient",
-             "inputs": {"tag": "raw"},
              "priority": 1
              }
         ]

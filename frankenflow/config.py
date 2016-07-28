@@ -42,10 +42,17 @@ class Config():
         self._assert_var_exists("sigma_phi", var_type=float)
         self._assert_var_exists("sigma_r", var_type=float)
 
-        # Max relative model change
+        # Gradient tapering parameters.
+        self._assert_var_exists("taper_longitude_offset_in_km", var_type=float)
+        self._assert_var_exists("taper_colatitude_offset_in_km",
+                                var_type=float)
+        self._assert_var_exists("taper_depth_offset_in_km", var_type=float)
+        self._assert_var_exists("taper_longitude_width_in_km", var_type=float)
+        self._assert_var_exists("taper_colatitude_width_in_km", var_type=float)
+        self._assert_var_exists("taper_depth_width_in_km", var_type=float)
+
+        # Max relative model change for seismopt.
         self._assert_var_exists("max_relative_model_change", var_type=float)
-
-
 
     def _assert_var_exists(self, key, var_type=None):
         assert key in self.config, \

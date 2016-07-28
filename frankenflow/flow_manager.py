@@ -40,10 +40,12 @@ class FlowManager():
             # Various plots.
             "hdf5_model_plots":
                 os.path.join(output_folder, "hdf5_model_plots"),
+            "hdf5_gradient_plots":
+                os.path.join(output_folder, "hdf5_gradient_plots"),
             "ses3d_format_model_plots":
                 os.path.join(output_folder, "ses3d_format_model_plots"),
             "gradient_plots":
-                os.path.join(output_folder, "gradient_plots"),
+                os.path.join(output_folder, "ses3d_format_gradient_plots"),
 
             # Collect all the misfits in simple text files.
             "misfits": os.path.join(output_folder, "misfits"),
@@ -171,17 +173,16 @@ class FlowManager():
 
                     if return_value["next_steps"]:
                         for step in return_value["next_steps"]:
-
-                            if "inputs" in step:
-                                inputs = copy.deepcopy(step["inputs"])
-                            else:
-                                inputs = {}
+                            inputs = {}
 
                             # Pass along previous inputs for everything but
                             # the orchestrate task. That task can reset the
                             # inputs and only pass along the required inputs.
                             if job["task_type"] != "Orchestrate":
                                 inputs.update(job["inputs"])
+
+                            if "inputs" in step:
+                                inputs.update(copy.deepcopy(step["inputs"]))
 
                             prio = step["priority"] \
                                 if "priority" in step else 0
