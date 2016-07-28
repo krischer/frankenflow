@@ -64,6 +64,14 @@ class Orchestrate(task.Task):
             goal_type, iteration_name = self.current_goal.split()
             if goal_type == "misfit":
                 self.misfit_and_gradient_goal()
+            elif goal_type == "gradient":
+                # This should be reached if we have a gradient and seismopt
+                # now needs it as well as the misfit value.
+                status = self.seismopt_file
+                if status["next_task"]["task_type"] != \
+                        "calculate_misfit_and_gradient":
+                    raise NotImplementedError
+                self.evaluate_misfit_and_gradient()
             else:
                 print("================")
                 print("================")
@@ -75,6 +83,46 @@ class Orchestrate(task.Task):
                 print("================")
                 print("================")
                 raise NotImplementedError
+
+    def write_misfitfile_to_seismopt(self, iteration):
+        # Read the misfit.
+        misfit_file = self.get_misfit_file(iteration)
+        assert os.path.exists(misfit_file)
+
+        with open(misfit_file, "rt") as fh:
+            misfit = float(fh.readline())
+
+        output_file = os.path.join(
+            self.context["seismopt_dir"], "MODEL_SES3D_H5", "misfit_model")
+        with open(output_file, "wb") as fh:
+            fh.write(struct.pack("d", misfit))
+
+    def evaluate_misfit_and_gradient(self):
+        status = self.seismopt_file
+
+        # Get the iteration name and make sure seismopt and frankenflow are
+        # on the same level.
+        iteration_name = "%03i" % status["_meta"]["iteration"]
+        assert iteration_name == self.current_goal.split()[1], \
+            self.current_goal
+
+        # At this point we have both, a misfit as well as a gradient - we
+        # now have to pass this to seismopt which will determine what to do
+        # next.
+        self.write_misfitfile_to_seismopt(iteration=iteration_name)
+
+        # Also copy the gradient.
+        dst = os.path.join(
+            self.context["seismopt_dir"], "MODEL_SES3D_H5", "gradient.h5")
+        src = self.get_gradient_file(iteration_name)
+        shutil.copy2(src=src, dst=dst)
+
+        self.next_steps = [
+            {"task_type": "RunSeismOpt",
+             "inputs": {},
+             "priority": 0
+             }
+        ]
 
     def misfit_and_gradient_goal(self):
         status = self.seismopt_file
@@ -342,20 +390,6 @@ class Orchestrate(task.Task):
                 "task_type": "RunSeismOpt",
                 "priority": 0
             }]
-
-
-    def write_misfit_to_opt(self, iteration, prefix, model_name):
-        # Read the misfit.
-        misfit_file = self.get_misfit_file(model_name)
-        assert os.path.exists(misfit_file)
-
-        with open(misfit_file, "rt") as fh:
-            misfit = float(fh.readline())
-
-        output_file = os.path.join(
-            self.context["seismopt_dir"], iteration, "misfit_%s" % prefix)
-        with open(output_file, "wb") as fh:
-            fh.write(struct.pack("d", misfit))
 
     def copy_model_to_opt(self, iteration, prefix, model_name):
         src_folder = os.path.join(
