@@ -41,8 +41,7 @@ class RunSeismOpt(task.Task):
         src = os.path.join(
             self.context["seismopt_dir"], "seismopt.json")
         dst = os.path.join(
-            self.context["output_folders"],
-            "seismopt_json_files",
+            self.context["output_folders"]["seismopt_json_files"],
             datetime.datetime.now().strftime("%y%m%dT%H%M%S_") +
             "_seismopt.json")
         shutil.copy2(src=src, dst=dst)
