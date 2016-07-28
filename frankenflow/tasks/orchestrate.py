@@ -100,7 +100,7 @@ class Orchestrate(task.Task):
 
         # If the misfit does not exists, calculate it, start by converting
         # the model to the binary format.
-        if not misfit_exists:
+        if "misfit" in tt and not misfit_exists:
             self.new_goal = "misfit %s" % iteration
             self.next_steps = [
                 {
@@ -114,7 +114,8 @@ class Orchestrate(task.Task):
                     "priority": 1
                 }
             ]
-        elif not gradient_exists:
+            return
+        elif "gradient" in tt and not gradient_exists:
             self.new_goal = "gradient %s" % iteration
             # Make sure the forward run is part of the inputs.
             self._assert_input_exists("hpc_agere_fwd_job_id")
@@ -128,10 +129,30 @@ class Orchestrate(task.Task):
                 },
                 "priority": 0
             }]
-        else:
-            raise NotImplementedError
+            return
 
-    def write_misfitfile_to_seismopt(self, iteration):
+        if "misfit" in tt:
+            self.write_misfit_file_to_seismopt(iteration)
+
+        if "gradient" in tt:
+            self.write_gradient_to_seismopt(filename=gradient)
+
+        self.new_goal = None
+        self.next_steps = [
+            {"task_type": "RunSeismOpt",
+             "inputs": {},
+             "priority": 0
+             }
+        ]
+
+    def write_gradient_to_seismopt(self, filename):
+        dst = os.path.join(
+            self.context["seismopt_dir"],
+            self.seismopt_file["next_task"]["folder"],
+            "gradient.h5")
+        shutil.copy2(src=filename, dst=dst)
+
+    def write_misfit_file_to_seismopt(self, iteration):
         # Read the misfit.
         misfit_file = self.get_misfit_file(iteration)
         assert os.path.exists(misfit_file)
@@ -140,7 +161,9 @@ class Orchestrate(task.Task):
             misfit = float(fh.readline())
 
         output_file = os.path.join(
-            self.context["seismopt_dir"], "MODEL_SES3D_H5", "misfit_model")
+            self.context["seismopt_dir"],
+            self.seismopt_file["next_task"]["folder"],
+            "misfit_model")
         with open(output_file, "wb") as fh:
             fh.write(struct.pack("d", misfit))
 
@@ -200,6 +223,7 @@ class Orchestrate(task.Task):
             fh.write("\n".join(opt_settings))
 
         # Now run seismopt for the first time.
+        self.new_goal = None
         self.next_steps = [
             {"task_type": "RunSeismOpt",
              "inputs": {},
@@ -207,21 +231,9 @@ class Orchestrate(task.Task):
             }
         ]
 
-    def store_opt_next_file(self):
-        """
-        Store the current opt.next file to keep track of what is happening.
-        """
-        now = datetime.datetime.now()
-        filename = now.strftime("%y%m%dT%H%M%S_") + "opt.next"
-
-        target = os.path.join(
-            self.context["output_folders"]["seismopt_next_files"], filename)
-
-        shutil.copy2(self.seismopt_next, target)
-
     def check_post_run(self):
         try:
-            if hasattr(self, "new_goal") and self.new_goal:
+            if hasattr(self, "new_goal"):
                 return {"new_goal": self.new_goal}
             return {}
         except:
