@@ -13,42 +13,48 @@ class PlotSpectralElementGridGradient(task.Task):
 
     @property
     def required_inputs(self):
-        return {"model_name", "gradient_name", "summed_gradient_directory"}
+        return {"local_binary_gradient_directory", "iteration_name"}
 
     def check_pre_staging(self):
-        assert os.path.exists(self.inputs["summed_gradient_directory"]), \
-            "'%s' does not exist" %  self.inputs["summed_gradient_directory"]
-
-        # boxfile from corresponding model
-        self.boxfile = os.path.join(self.c["lasif_project"], "MODELS",
-                                    self.inputs["model_name"], "boxfile")
-        self.gradient_boxfile = os.path.join(
-            self.inputs["summed_gradient_directory"], "boxfile")
-
-        assert os.path.exists(self.boxfile), "File '%s' must exist." % \
-            self.boxfile
+        # The folder must exist!
+        assert os.path.exists(
+            self.inputs["local_binary_gradient_directory"]), \
+            "'%s' does not exist" % self.inputs[
+                "local_binary_gradient_directory"]
 
     def stage_data(self):
-        # Copy the boxfile from the corresponding model. Its really only
-        # needed for the plotting so its fine to do that here.
-        shutil.copy2(self.boxfile, self.gradient_boxfile)
+        # The gradient needs a boxfile. Just get it from the corresponding
+        # model which should always have one.
+        self.boxfile = os.path.join(
+            self.inputs["local_binary_gradient_directory"], "boxfile")
+        if os.path.exists(self.boxfile):
+            return
+        cmd = [
+            "h5dump",
+            "-d",
+            "_meta/boxfile",
+            "-b",
+            "-o",
+            self.boxfile,
+            self.hdf5_model_path]
+        self._run_external_script(cwd=".", cmd=cmd)
 
     def check_post_staging(self):
-        assert os.path.exists(self.gradient_boxfile), \
-            "File '%s' does not exist." % self.gradient_boxfile
+        assert os.path.exists(self.boxfile), \
+            "boxfile could not be extracted from the model for some reason."
 
     def run(self):
         self.filenames = []
         variables = ["grad_rho", "grad_csv", "grad_csh", "grad_cp"]
         for variable in variables:
             filename = "%s_%s_100km_depth.jpg" % (
-                self.inputs["gradient_name"], variable)
+                self.inputs["iteration_name"], variable)
             filename = os.path.join(self.working_dir, filename)
             self.filenames.append(filename)
             cmd = [
                 self.context["config"]["lasif_cmd"],
                 "plot_kernel",
-                self.inputs["summed_gradient_directory"],
+                self.inputs["local_binary_gradient_directory"],
                 "100",
                 variable,
                 filename]
@@ -62,7 +68,7 @@ class PlotSpectralElementGridGradient(task.Task):
         for src in self.filenames:
             dest = os.path.join(
                 self.context["output_folders"][
-                    "unsmoothed_spectral_element_grid_gradients"],
+                    "ses3d_format_gradient_plots"],
                 os.path.basename(src))
             shutil.copy2(src, dest)
 

@@ -44,7 +44,7 @@ class FlowManager():
                 os.path.join(output_folder, "hdf5_gradient_plots"),
             "ses3d_format_model_plots":
                 os.path.join(output_folder, "ses3d_format_model_plots"),
-            "gradient_plots":
+            "ses3d_format_gradient_plots":
                 os.path.join(output_folder, "ses3d_format_gradient_plots"),
 
             # Collect all the misfits in simple text files.

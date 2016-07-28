@@ -118,6 +118,11 @@ class Orchestrate(task.Task):
                 {
                     "task_type": "ConvertModelToBinary",
                     "inputs": {"iteration_name": iteration_name},
+                    "priority": 0
+                },
+                {
+                    "task_type": "PlotHDF5Model",
+                    "inputs": {"iteration_name": iteration_name},
                     "priority": 1
                 }
             ]

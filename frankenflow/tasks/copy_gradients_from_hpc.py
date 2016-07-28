@@ -57,6 +57,12 @@ class CopyGradientsFromHPC(task.Task):
                  "local_binary_gradient_directory": self.local_kernel_directory
              },
              "priority": 0
+             },
+            {"task_type": "PlotSpectralElementGridGradient",
+             "inputs": {
+                 "local_binary_gradient_directory": self.local_kernel_directory
+             },
+             "priority": 1
              }
         ]
         return next_steps

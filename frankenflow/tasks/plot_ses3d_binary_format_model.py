@@ -27,7 +27,6 @@ class PlotSES3DBinaryFormatModel(task.Task):
         pass
 
     def run(self):
-        return
         self.filenames = []
         variables = ["rho", "vsv", "vsh", "vp"]
         for variable in variables:
@@ -48,7 +47,6 @@ class PlotSES3DBinaryFormatModel(task.Task):
                 cmd=cmd)
 
     def check_post_run(self):
-        return
         # Copy the files
         for src in self.filenames:
             dest = os.path.join(
