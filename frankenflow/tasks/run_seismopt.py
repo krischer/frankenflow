@@ -1,4 +1,6 @@
+import datetime
 import os
+import shutil
 
 from . import task
 
@@ -34,7 +36,16 @@ class RunSeismOpt(task.Task):
             "seismopt exited with return code %i." % returncode
 
     def check_post_run(self):
-        pass
+        # After each run, copy a timestamped seimsopt file to the outputs.
+        # This should enable to reconstruct what seismopt has been up to.
+        src = os.path.join(
+            self.context["seismopt_dir"], "seismopt.json")
+        dst = os.path.join(
+            self.context["output_folders"],
+            "seismopt_json_files",
+            datetime.datetime.now().strftime("%y%m%dT%H%M%S_") +
+            "_seismopt.json")
+        shutil.copy2(src=src, dst=dst)
 
     def generate_next_steps(self):
         # It will pass on all inputs to the next stage.
