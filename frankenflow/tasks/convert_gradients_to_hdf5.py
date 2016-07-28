@@ -66,7 +66,7 @@ class ConvertGradientsToHDF5(task.Task):
              "priority": 1
              },
             {"task_type": "TaperAndPreconditionGradient",
-             "priority": 1
+             "priority": 0
              }
         ]
         return next_steps
