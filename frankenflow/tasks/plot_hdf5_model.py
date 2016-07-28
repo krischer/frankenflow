@@ -54,7 +54,7 @@ class PlotHDF5Model(task.Task):
         for picture in self.outputs.values():
             src = os.path.join(self.working_dir, picture)
             dest = os.path.join(
-                self.context["output_folders"]["hdf5_models"], picture)
+                self.context["output_folders"]["hdf5_model_plots"], picture)
             shutil.copy2(src, dest)
 
     def generate_next_steps(self):

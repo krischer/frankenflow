@@ -50,7 +50,7 @@ class PlotSES3DBinaryFormatModel(task.Task):
         # Copy the files
         for src in self.filenames:
             dest = os.path.join(
-                self.context["output_folders"]["ses3d_format_models"],
+                self.context["output_folders"]["ses3d_format_model_plots"],
                 os.path.basename(src))
             shutil.copy2(src, dest)
 
