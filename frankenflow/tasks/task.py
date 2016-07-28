@@ -273,10 +273,12 @@ class Task(metaclass=abc.ABCMeta):
             self.context["output_folders"]["hdf5_models"],
             "%s_model.h5" % iteration_name)
 
-    def get_gradient_file(self, iteration_name):
+    def get_gradient_file(self, iteration_name, tag=""):
+        if tag:
+            tag = "_" + tag
         return os.path.join(
             self.context["output_folders"]["hdf5_gradients"],
-            "%s_gradient.h5" % iteration_name)
+            "%s%s_gradient.h5" % (iteration_name, tag))
 
     @property
     def binary_model_path(self):
