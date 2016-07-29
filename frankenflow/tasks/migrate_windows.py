@@ -9,7 +9,7 @@ class MigrateWindows(task.Task):
     """
     @property
     def required_inputs(self):
-        return {"model_name"}
+        return {"iteration_name"}
 
     def check_pre_staging(self):
         pass
@@ -24,8 +24,8 @@ class MigrateWindows(task.Task):
         # First create a new iteration starting from iteration 0.
         cmd = [self.c["lasif_cmd"],
                "create_successive_iteration",
-               "0",
-               self.inputs["model_name"]]
+               "000",
+               self.inputs["iteration_name"]]
 
         returncode = self._run_external_script(
             cwd=self.c["lasif_project"], cmd=cmd)
@@ -36,8 +36,8 @@ class MigrateWindows(task.Task):
         # Migrate the windows.
         cmd = [self.c["lasif_cmd"],
                "migrate_windows",
-               "0",
-               self.inputs["model_name"]]
+               "000",
+               self.inputs["iteration_name"]]
 
         returncode = self._run_external_script(
             cwd=self.c["lasif_project"], cmd=cmd)
