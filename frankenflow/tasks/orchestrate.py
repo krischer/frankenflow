@@ -1,7 +1,5 @@
-import datetime
 import json
 import os
-import re
 import shutil
 import struct
 
@@ -119,12 +117,11 @@ class Orchestrate(task.Task):
             self.new_goal = "gradient %s" % iteration
             # Make sure the forward run is part of the inputs.
             self._assert_input_exists("hpc_agere_fwd_job_id")
-            self._assert_input_exists("iteration_name")
 
             self.next_steps = [{
                 "task_type": "CalculateAdjointSources",
                 "inputs": {
-                    "iteration_name": self.inputs["iteration_name"],
+                    "iteration_name": iteration,
                     "hpc_agere_fwd_job_id": self.inputs["hpc_agere_fwd_job_id"]
                 },
                 "priority": 0
@@ -137,10 +134,21 @@ class Orchestrate(task.Task):
         if "gradient" in tt:
             self.write_gradient_to_seismopt(filename=gradient)
 
+            # The gradient requires the id of the forward run - it always
+            # has to exist - pass it on to seismopt which will carry it along.
+            self._assert_input_exists("hpc_agere_fwd_job_id")
+            self.inputs = {
+                "hpc_agere_fwd_job_id": self.inputs["hpc_agere_fwd_job_id"]
+            }
+        else:
+            self.inputs = {}
+
+
+        # Now just run seismop and see what happens.
         self.new_goal = None
         self.next_steps = [
             {"task_type": "RunSeismOpt",
-             "inputs": {},
+             "inputs": self.inputs,
              "priority": 0
              }
         ]
