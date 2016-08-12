@@ -38,12 +38,22 @@ class RunSeismOpt(task.Task):
     def check_post_run(self):
         # After each run, copy a timestamped seimsopt file to the outputs.
         # This should enable to reconstruct what seismopt has been up to.
+        timestamp = datetime.datetime.now().strftime("%y%m%dT%H%M%S_")
+
+        # JSON info file.
         src = os.path.join(
             self.context["seismopt_dir"], "seismopt.json")
         dst = os.path.join(
-            self.context["output_folders"]["seismopt_json_files"],
-            datetime.datetime.now().strftime("%y%m%dT%H%M%S_") +
-            "_seismopt.json")
+            self.context["output_folders"]["seismopt_files"],
+            timestamp + "_seismopt.json")
+        shutil.copy2(src=src, dst=dst)
+
+        # The options file.
+        src = os.path.join(
+            self.context["seismopt_dir"], "opt_settings.xml")
+        dst = os.path.join(
+            self.context["output_folders"]["seismopt_files"],
+            timestamp + "_opt_settings.xml")
         shutil.copy2(src=src, dst=dst)
 
     def generate_next_steps(self):

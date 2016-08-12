@@ -49,9 +49,10 @@ class FlowManager():
 
             # Collect all the misfits in simple text files.
             "misfits": os.path.join(output_folder, "misfits"),
-            # Store all the seismopt steering files.
-            "seismopt_json_files":
-                os.path.join(output_folder, "seismopt_json_files"),
+            # Store all the seismopt steering files to be able to reproduce
+            # behavior.
+            "seismopt_files":
+                os.path.join(output_folder, "seismopt_files"),
             "hdf5_gradients":
                 os.path.join(output_folder, "hdf5_gradients"),
             "hdf5_models":

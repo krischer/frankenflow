@@ -60,10 +60,22 @@ class Orchestrate(task.Task):
                 "current_run"]
 
         known_task_types = ["calculate_misfit", "calculate_gradient",
-                            "calculate_misfit_and_gradient"]
+                            "calculate_misfit_and_gradient",
+                            "finalize_iteration"]
         tt = status["next_task"]["task_type"]
         if tt not in known_task_types:
             raise Exception("Task type '%s' now known." % tt)
+
+        if tt == "finalize_iteration":
+            # Reset everything and run seismopt once again.
+            self.new_goal = None
+            self.next_steps = [
+                {"task_type": "RunSeismOpt",
+                 "inputs": {},
+                 "priority": 0
+                 }
+            ]
+            return
 
         # It all revolves around models and misfits. First check which one
         # we are talking about.
@@ -76,7 +88,7 @@ class Orchestrate(task.Task):
         misfit = self.get_misfit_file(iteration)
         gradient = self.get_gradient_file(iteration, tag="preconditioned")
 
-        # Now, no matter what, the model files has to exist, otherwise it
+        # Now, no matter what, the model file has to exist, otherwise it
         # has to be copied from the seismopt directory.
         if not os.path.exists(model):
             nt = status["next_task"]
@@ -134,21 +146,19 @@ class Orchestrate(task.Task):
         if "gradient" in tt:
             self.write_gradient_to_seismopt(filename=gradient)
 
-            # The gradient requires the id of the forward run - it always
-            # has to exist - pass it on to seismopt which will carry it along.
-            self._assert_input_exists("hpc_agere_fwd_job_id")
-            self.inputs = {
-                "hpc_agere_fwd_job_id": self.inputs["hpc_agere_fwd_job_id"]
-            }
-        else:
-            self.inputs = {}
-
+        # Now we have to call seismopt - seismopt might decide that it wants
+        # the gradient for the current iteration - thus we just always pass
+        # along the forward job id if it exists.
+        inputs = {}
+        if "hpc_agere_fwd_job_id" in self.inputs:
+            inputs["hpc_agere_fwd_job_id"] = \
+                self.inputs["hpc_agere_fwd_job_id"]
 
         # Now just run seismop and see what happens.
         self.new_goal = None
         self.next_steps = [
             {"task_type": "RunSeismOpt",
-             "inputs": self.inputs,
+             "inputs": inputs,
              "priority": 0
              }
         ]
@@ -225,6 +235,9 @@ class Orchestrate(task.Task):
             "    <working_directory>.</working_directory>",
             "    <max_relative_model_change>%f""</max_relative_model_change>" %
             self.c["max_relative_model_change"],
+            "    <wolfe>"
+            "        <theta>0.9</theta>"
+            "    </wolfe>"
             "</opt_settings>"
         ]
         with open(os.path.join(opt_dir, "opt_settings.xml"), "wt") as fh:
