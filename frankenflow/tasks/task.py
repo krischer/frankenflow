@@ -201,42 +201,54 @@ class Task(metaclass=abc.ABCMeta):
         stderr = stderr.readlines()
         return stdout, stderr
 
-    def _run_external_script(self, cwd, cmd):
-        starttime = datetime.datetime.now()
-        _start = time.time()
+    def _run_external_script(self, cwd, cmd, retry=1):
+        for _i in range(retry):
+            _i += 1
+            starttime = datetime.datetime.now()
+            _start = time.time()
 
-        self.add_log_entry("Locally executing cmd '%s' in folder '%s' ..." % (
-            cmd, cwd))
+            self.add_log_entry(
+                "Locally executing cmd '%s' in folder '%s' ..." % (
+                cmd, cwd))
 
-        # start the daemon main loop
-        with open(self.stdout, "ab") as stdout:
-            stdout.write(b"\n\n\n\n\n================================\n")
-            stdout.write(b"\n================================\n")
-            stdout.write(b"STARTTIME: %b\n" % str(starttime).encode())
-            stdout.write(b"---------------------\n")
-            stdout.write(b"STDOUT START\n")
-            stdout.write(b"---------------------\n")
-            with open(self.stderr, "ab") as stderr:
-                p = subprocess.Popen(cmd, cwd=cwd,
-                                     stdout=stdout,
-                                     stderr=stderr)
+            # start the daemon main loop
+            with open(self.stdout, "ab") as stdout:
+                stdout.write(b"\n\n\n\n\n================================\n")
+                stdout.write(b"\n================================\n")
+                stdout.write(b"STARTTIME: %b\n" % str(starttime).encode())
+                stdout.write(b"---------------------\n")
+                stdout.write(b"STDOUT START\n")
+                stdout.write(b"---------------------\n")
+                with open(self.stderr, "ab") as stderr:
+                    p = subprocess.Popen(cmd, cwd=cwd,
+                                         stdout=stdout,
+                                         stderr=stderr)
 
-        p.wait()
+            p.wait()
 
-        endtime = datetime.datetime.now()
-        _end = time.time()
+            endtime = datetime.datetime.now()
+            _end = time.time()
 
-        with open(self.stdout, "at") as fh:
-            fh.write("\n---------------------\n")
-            fh.write("STDOUT END\n")
-            fh.write("---------------------\n")
-            fh.write("DONE\n")
-            fh.write("PID: %i\n" % p.pid)
-            fh.write("RETURNCODE: %i\n" % p.returncode)
-            fh.write("CMD: %s\n" % (str(cmd)))
-            fh.write("RUNTIME: %.3f seconds\n" % (_end - _start))
-            fh.write("ENDTIME: %s\n" % endtime)
+            with open(self.stdout, "at") as fh:
+                fh.write("\n---------------------\n")
+                fh.write("STDOUT END\n")
+                fh.write("---------------------\n")
+                fh.write("DONE\n")
+                fh.write("PID: %i\n" % p.pid)
+                fh.write("RETURNCODE: %i\n" % p.returncode)
+                fh.write("CMD: %s\n" % (str(cmd)))
+                fh.write("RUNTIME: %.3f seconds\n" % (_end - _start))
+                fh.write("ENDTIME: %s\n" % endtime)
 
+            # Return if the retcode is 0 or if we reached the maximum number
+            # of retries...
+            if p.returncode == 0 or retry == _i:
+                return p.returncode
+
+            # Sleep 20 seconds - retrying is intended for network operations.
+            time.sleep(20)
+
+        # Should not be reachable but let's be safe.
         return p.returncode
 
     def copy_blockfiles(self, target_dir):

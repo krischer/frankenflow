@@ -69,10 +69,16 @@ class CopyAdjointSourcesToHPC(task.Task):
                 self.remote_adjoint_source_directory,
                 os.path.basename(folder))
 
-            cmd = ["rsync", "-aP", folder + "/", "%s:%s" % (
+            cmd = ["rsync", "-aP", "--timeout=30",
+                   folder + "/", "%s:%s" % (
                 self.c["hpc_remote_host"], target)]
 
-            self._run_external_script(cwd=".", cmd=cmd)
+            # We really don't want this to fail!
+            retcode = self._run_external_script(cwd=".", cmd=cmd, retry=20)
+
+            if retcode != 0:
+                raise Exception("rsync failed for %s." %
+                                os.path.basename(folder))
 
     def check_post_run(self):
         # Make sure everything has been copied.
