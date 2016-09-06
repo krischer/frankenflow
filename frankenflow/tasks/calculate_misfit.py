@@ -33,7 +33,7 @@ class CalculateMisfit(task.Task):
         assert returncode == 0, "Script return with code %i" % returncode
 
         cmd = ["mpirun", "-n", "4", self.c["lasif_cmd"],
-               "compare_misfits", "--read_only_caches"
+               "compare_misfits", "--read_only_caches",
                "000", self.inputs["iteration_name"]]
 
         returncode = self._run_external_script(
