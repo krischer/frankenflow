@@ -37,6 +37,7 @@ class CalculateAdjointSources(task.Task):
     def run(self):
         for event in self.events:
             cmd = [self.c["lasif_cmd"], "finalize_adjoint_sources",
+                   "--read_only_caches",
                    self.inputs["iteration_name"], event]
             returncode = self._run_external_script(
                 cwd=self.c["lasif_project"], cmd=cmd)
