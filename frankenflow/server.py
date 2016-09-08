@@ -129,6 +129,8 @@ def serve(flow_manager, port=12111, debug=False, open_to_outside=False):
     if debug:
         app.run(port=port, debug=debug, host=host)
     else:
+        # Use the gevent WSGI server to get a much more stable "production"
+        # environment.
         from gevent.wsgi import WSGIServer
 
         http_server = WSGIServer((host, port), app)
