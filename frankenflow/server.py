@@ -124,7 +124,15 @@ def serve(flow_manager, port=12111, debug=False, open_to_outside=False):
         host = None
 
     app.flow_manager = flow_manager
-    app.run(port=port, debug=debug, host=host)
+
+
+    if debug:
+        app.run(port=port, debug=debug, host=host)
+    else:
+        from gevent.wsgi import WSGIServer
+
+        http_server = WSGIServer((host, port), app)
+        http_server.serve_forever()
 
 
 def __main__():
