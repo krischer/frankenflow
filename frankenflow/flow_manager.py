@@ -153,6 +153,41 @@ class FlowManager():
     def advance_job(self, job_id):
         job = self.graph[job_id]
 
+        # There are some situations (mainly with running jobs on HPC where
+        # one wants to manually finish a job.
+        #
+        # If that is done, the graph.json file has to be manually edit and
+        # two things have to be done for the current job:
+        #
+        # 1. Set the "job_status" to "manually_finished"
+        # 2. Add a new "manually_set_next_steps" item and manually add the
+        #    next steps.
+        if job["job_status"] == "manually_finished":
+            assert "manually_set_next_steps" in job
+
+            for step in job["mnually_set_next_steps"]:
+                inputs = {}
+
+                # Pass along previous inputs for everything but
+                # the orchestrate task. That task can reset the
+                # inputs and only pass along the required inputs.
+                if job["task_type"] != "Orchestrate":
+                    inputs.update(job["inputs"])
+
+                if "inputs" in step:
+                    inputs.update(copy.deepcopy(step["inputs"]))
+
+                prio = step["priority"] \
+                    if "priority" in step else 0
+                self.graph.add_job(
+                    task_type=step["task_type"],
+                    inputs=inputs,
+                    priority=prio,
+                    from_node=job_id)
+
+            self.graph.serialize()
+            return
+
         if job["job_status"] == "running":
             # Check if it is still running.
             result = AsyncResult(id=job["celery_task_id"])
