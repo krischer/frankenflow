@@ -165,7 +165,7 @@ class FlowManager():
         if job["job_status"] == "manually_finished":
             assert "manually_set_next_steps" in job
 
-            for step in job["mnually_set_next_steps"]:
+            for step in job["manually_set_next_steps"]:
                 inputs = {}
 
                 # Pass along previous inputs for everything but
