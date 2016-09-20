@@ -236,7 +236,7 @@ class Orchestrate(task.Task):
             "    <max_relative_model_change>%f""</max_relative_model_change>" %
             self.c["max_relative_model_change"],
             "    <wolfe>"
-            "        <theta>0.9</theta>"
+            "        <theta>0.99</theta>"
             "    </wolfe>"
             "</opt_settings>"
         ]
