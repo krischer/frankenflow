@@ -25,9 +25,20 @@ class TarWaveformsOnHPC(task.Task):
             c["hpc_agere_project"], "__WAVEFORMS",
             self.inputs["hpc_agere_fwd_job_id"])
 
+        # Check that waveforms for enough events are present.
         event_folders = self.remote_listdir(waveform_directory)
         assert len(event_folders) == c["number_of_events"], \
             "Run should have resulted in '%s' events." % c["number_of_events"]
+
+        # Also check they all actually have waveforms.
+        stdout, stderr = self._run_ssh_command('du %s' % waveform_directory)
+        assert not stderr, "stderr during waveform checkign: %s" % stderr
+        stdout = stdout.strip().splitlines()
+        assert len(stdout) == c["number_of_events"], "Should not happen!"
+        # Random threshold of a thousand bytes.
+        stdout = [_i for _i in stdout if int(_i.strip().split()[0]) < 1000]
+        assert not stdout, "Events %s don't have enough waveform data!" % (
+            ", ".join(_i.strip().split()[1] for _i in stdout))
 
         self.expected_output_file = os.path.join(
             self.c["hpc_agere_project"], "__WAVEFORMS",
