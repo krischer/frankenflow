@@ -31,8 +31,11 @@ class TarWaveformsOnHPC(task.Task):
             "Run should have resulted in '%s' events." % c["number_of_events"]
 
         # Also check they all actually have waveforms.
-        stdout, stderr = self._run_ssh_command('du %s' % waveform_directory)
+        stdout, stderr = self._run_ssh_command(
+            'du %s/*' % waveform_directory)
         assert not stderr, "stderr during waveform checkign: %s" % stderr
+        # Make sure to remove any empty lines.
+        stdout = [_i.strip() for _i in stdout if _i.strip()]
         assert len(stdout) == c["number_of_events"], "Should not happen!"
         # Random threshold of a thousand bytes.
         stdout = [_i for _i in stdout if int(_i.strip().split()[0]) < 1000]
