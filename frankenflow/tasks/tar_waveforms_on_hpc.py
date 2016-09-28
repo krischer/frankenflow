@@ -33,7 +33,6 @@ class TarWaveformsOnHPC(task.Task):
         # Also check they all actually have waveforms.
         stdout, stderr = self._run_ssh_command('du %s' % waveform_directory)
         assert not stderr, "stderr during waveform checkign: %s" % stderr
-        stdout = stdout.strip().splitlines()
         assert len(stdout) == c["number_of_events"], "Should not happen!"
         # Random threshold of a thousand bytes.
         stdout = [_i for _i in stdout if int(_i.strip().split()[0]) < 1000]
