@@ -7,6 +7,9 @@ import warnings
 
 _URL = "https://api.pushover.net/1/messages.json"
 
+_LAST_TITLE = [""]
+_LAST_MESSAGE = [""]
+
 
 def get_config():
     filename = os.path.expanduser(os.path.join("~", ".pushover.json"))
@@ -22,6 +25,14 @@ def get_config():
 
 
 def send_notification(title, message, sound="magic"):
+    # Do not send the same message X-times in a row!
+    if title == _LAST_TITLE[0] and message == _LAST_MESSAGE[0]:
+        warnings.warn("Will not send a duplicate message!")
+        return
+
+    _LAST_TITLE[0] = title
+    _LAST_MESSAGE[0] = message
+
     try:
         config = get_config()
     except FileNotFoundError:
@@ -42,4 +53,3 @@ def send_notification(title, message, sound="magic"):
     except requests.exceptions.ConnectionError:
         warnings.warn("Failed to send notification - connection error. No "
                       "internet access?")
-
